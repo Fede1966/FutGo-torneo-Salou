@@ -408,6 +408,45 @@ button {
   font-size: .85rem;
 }
 
+.staff-profile-card {
+  width: min(540px, calc(100vw - 26px));
+}
+
+.staff-profile-content {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  align-items: center;
+  gap: 22px;
+  padding: 8px 0;
+}
+
+.staff-profile-photo {
+  width: 140px;
+  height: 160px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: #fff;
+  background-color: var(--ink);
+  background-position: center 15%;
+  background-size: cover;
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.staff-profile-content h3 {
+  margin: 5px 0 8px;
+  font-size: 1.7rem;
+  line-height: 1.05;
+}
+
+.staff-profile-role {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
 .player-card {
   padding: 14px;
   display: grid;
@@ -2135,6 +2174,16 @@ button:focus-visible {
   .staff-section-heading .row-actions {
     display: grid;
     grid-template-columns: auto 1fr;
+  }
+
+  .staff-profile-content {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-profile-photo {
+    width: 100%;
+    max-width: 240px;
+    margin: 0 auto;
   }
 
   .detail-tabs {

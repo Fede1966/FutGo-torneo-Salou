@@ -180,6 +180,32 @@ staffDialog.innerHTML = `
 `;
 document.body.append(staffDialog);
 
+const staffProfileDialog = document.createElement("dialog");
+staffProfileDialog.id = "staff-profile-dialog";
+staffProfileDialog.className = "modal";
+staffProfileDialog.innerHTML = `
+  <div class="modal-card staff-profile-card">
+    <div class="modal-header">
+      <h2>Ficha del staff</h2>
+      <button class="icon-button" id="close-staff-profile" type="button" aria-label="Cerrar">×</button>
+    </div>
+    <div class="staff-profile-content">
+      <div class="staff-profile-photo" id="staff-profile-photo"></div>
+      <div>
+        <p class="eyebrow">Equipo técnico</p>
+        <h3 id="staff-profile-name"></h3>
+        <p class="staff-profile-role" id="staff-profile-role"></p>
+        <p class="meta" id="staff-profile-team"></p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="secondary-button" id="edit-staff-profile" type="button">Editar ficha</button>
+      <button class="primary-button" id="close-staff-profile-action" type="button">Cerrar</button>
+    </div>
+  </div>
+`;
+document.body.append(staffProfileDialog);
+
 const staffForm = staffDialog.querySelector("#staff-form");
 const deleteStaffButton = staffDialog.querySelector("#delete-staff-button");
 const staffPhotoInput = staffDialog.querySelector("#staff-photo");
@@ -228,6 +254,14 @@ deleteStaffButton.addEventListener("click", () => {
   saveState();
   staffDialog.close();
   render();
+});
+
+staffProfileDialog.querySelector("#close-staff-profile").addEventListener("click", () => staffProfileDialog.close());
+staffProfileDialog.querySelector("#close-staff-profile-action").addEventListener("click", () => staffProfileDialog.close());
+staffProfileDialog.querySelector("#edit-staff-profile").addEventListener("click", () => {
+  const id = staffProfileDialog.dataset.staffId;
+  staffProfileDialog.close();
+  openStaffDialog(id);
 });
 
 document.querySelectorAll(".nav-button").forEach((button) => {
@@ -1139,6 +1173,19 @@ function openStaffDialog(id = "") {
   staffDialog.showModal();
 }
 
+function openStaffProfile(id) {
+  const item = state.staff.find((staffItem) => staffItem.id === id);
+  if (!item) return;
+  const photo = staffProfileDialog.querySelector("#staff-profile-photo");
+  photo.textContent = item.photo ? "" : initials(item.name);
+  photo.style.backgroundImage = item.photo ? `url("${item.photo}")` : "";
+  staffProfileDialog.querySelector("#staff-profile-name").textContent = item.name;
+  staffProfileDialog.querySelector("#staff-profile-role").textContent = item.role;
+  staffProfileDialog.querySelector("#staff-profile-team").textContent = currentTeam().name;
+  staffProfileDialog.dataset.staffId = item.id;
+  staffProfileDialog.showModal();
+}
+
 function openTeamDialog(teamId = "") {
   const item = state.teams.find((team) => team.id === teamId);
   document.querySelector("#team-modal-title").textContent = item ? "Editar equipo" : "Nuevo equipo";
@@ -1338,6 +1385,9 @@ function renderSquad() {
   views.squad.querySelectorAll("[data-edit-staff]").forEach((button) => {
     button.addEventListener("click", () => openStaffDialog(button.dataset.editStaff));
   });
+  views.squad.querySelectorAll("[data-open-staff]").forEach((button) => {
+    button.addEventListener("click", () => openStaffProfile(button.dataset.openStaff));
+  });
 }
 
 function renderPlayerCard(item) {
@@ -1374,6 +1424,7 @@ function renderStaffCard(item) {
         </div>
       </div>
       <div class="row-actions">
+        <button class="primary-button" data-open-staff="${item.id}" type="button">Ver ficha</button>
         <button class="secondary-button" data-edit-staff="${item.id}" type="button">Editar</button>
       </div>
     </article>
