@@ -1293,7 +1293,7 @@ function renderSquad() {
       </div>
       ${players.length ? "" : `<div class="empty-state">Este equipo aún no tiene jugadores. Usa “Añadir jugador” para crear su plantilla.</div>`}
     </section>
-    <section class="staff-section panel">
+    <section class="staff-section">
       <div class="squad-section-heading staff-section-heading">
         <div>
           <p class="eyebrow">Equipo técnico</p>
@@ -1369,10 +1369,13 @@ function renderStaffCard(item) {
         <div class="staff-avatar" ${photoStyle}>${item.photo ? "" : initials(item.name)}</div>
         <div>
           <h3>${escapeHtml(item.name)}</h3>
-          <div class="staff-role">${escapeHtml(item.role)}</div>
+          <div class="meta">${escapeHtml(item.role)}</div>
+          <div class="meta">Equipo técnico</div>
         </div>
       </div>
-      <button class="secondary-button staff-edit-button" data-edit-staff="${item.id}" type="button">Editar</button>
+      <div class="row-actions">
+        <button class="secondary-button" data-edit-staff="${item.id}" type="button">Editar</button>
+      </div>
     </article>
   `;
 }

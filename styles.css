@@ -348,7 +348,6 @@ button {
 
 .staff-section {
   margin-top: 26px;
-  padding: 16px;
 }
 
 .staff-section-heading {
@@ -357,33 +356,32 @@ button {
 
 .staff-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 280px));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
 }
 
 .staff-card {
+  padding: 14px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-content: space-between;
   gap: 12px;
-  min-height: 84px;
-  padding: 12px;
+  min-height: 164px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f7f8fa;
+  background: var(--surface);
 }
 
 .staff-main {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 50px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 
 .staff-avatar {
-  width: 42px;
-  height: 42px;
+  width: 50px;
+  height: 50px;
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -398,20 +396,7 @@ button {
 .staff-card h3 {
   margin: 0;
   overflow-wrap: anywhere;
-  font-size: .94rem;
-}
-
-.staff-role {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: .78rem;
-  font-weight: 750;
-}
-
-.staff-edit-button {
-  min-height: 34px;
-  padding: 0 10px;
-  font-size: .76rem;
+  font-size: 1rem;
 }
 
 .staff-empty {
