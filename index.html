@@ -4,9 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FutGo | Gestión técnica</title>
-    <link rel="stylesheet" href="styles.css?v=20260620-4" />
+    <link rel="stylesheet" href="styles.css?v=20260620-5" />
+    <link rel="stylesheet" href="login.css" />
   </head>
   <body>
+    <!-- Login overlay (bloquea la app hasta autenticación) -->
+    <div id="login-overlay" class="login-shell" aria-hidden="false">
+      <div class="card">
+        <h1 id="login-title">Acceso a FutGo — Área técnica</h1>
+        <form id="login-form" novalidate>
+          <label for="email">Correo electrónico</label>
+          <input id="email" name="email" type="email" placeholder="tu@club.com" required />
+
+          <label for="password">Contraseña</label>
+          <input id="password" name="password" type="password" placeholder="Contraseña" required minlength="8" />
+
+          <div class="hint">Si no tienes cuenta, contacta con el administrador.</div>
+
+          <button id="submit" class="primary" type="submit">Iniciar sesión</button>
+
+          <div id="message" role="status" aria-live="polite"></div>
+        </form>
+
+        <div class="links">
+          <button id="forgot" class="link-button" type="button">¿Olvidaste tu contraseña?</button>
+        </div>
+      </div>
+    </div>
+
     <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
@@ -203,5 +228,24 @@
     </dialog>
 
     <script src="app.js?v=20260620-11"></script>
+    <script src="login.js"></script>
+    <script>
+      (function(){
+        const overlay = document.getElementById('login-overlay');
+        const appShell = document.querySelector('.app-shell');
+        function update(){
+          const token = localStorage.getItem('futgo_token');
+          if(token){
+            overlay.style.display = 'none';
+            overlay.setAttribute('aria-hidden','true');
+          } else {
+            overlay.style.display = 'flex';
+            overlay.setAttribute('aria-hidden','false');
+          }
+        }
+        window.addEventListener('storage', update);
+        document.addEventListener('DOMContentLoaded', update);
+      })();
+    </script>
   </body>
 </html>
