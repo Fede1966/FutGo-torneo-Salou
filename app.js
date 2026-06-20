@@ -165,16 +165,12 @@ staffDialog.innerHTML = `
         <option value="Delegado/a"></option>
       </datalist>
     </label>
-    <div class="form-grid">
-      <label>
-        Teléfono opcional
-        <input id="staff-phone" type="tel" maxlength="30" />
-      </label>
-      <label>
-        Email opcional
-        <input id="staff-email" type="email" maxlength="120" />
-      </label>
-    </div>
+    <label>
+      Foto opcional
+      <input id="staff-photo" type="hidden" />
+      <input id="staff-photo-file" type="file" accept="image/*" />
+    </label>
+    <div class="photo-preview staff-photo-preview" id="staff-photo-preview"></div>
     <div class="modal-actions">
       <button class="danger-button" id="delete-staff-button" type="button">Eliminar</button>
       <button class="secondary-button" value="cancel" type="submit">Cancelar</button>
@@ -186,23 +182,38 @@ document.body.append(staffDialog);
 
 const staffForm = staffDialog.querySelector("#staff-form");
 const deleteStaffButton = staffDialog.querySelector("#delete-staff-button");
+const staffPhotoInput = staffDialog.querySelector("#staff-photo");
+const staffPhotoFileInput = staffDialog.querySelector("#staff-photo-file");
+const staffPhotoPreview = staffDialog.querySelector("#staff-photo-preview");
 
-staffForm.addEventListener("submit", (event) => {
+staffPhotoFileInput.addEventListener("change", async () => {
+  const file = staffPhotoFileInput.files[0];
+  if (!file) return updateStaffPhotoPreview(staffPhotoInput.value);
+  updateStaffPhotoPreview(await readFileAsDataUrl(file));
+});
+
+staffForm.addEventListener("submit", async (event) => {
   if (event.submitter?.value === "cancel") return;
   event.preventDefault();
   const id = staffDialog.querySelector("#staff-id").value || crypto.randomUUID();
+  const existing = state.staff.find((staffItem) => staffItem.id === id);
+  const photoFile = staffPhotoFileInput.files[0];
+  const uploadedPhoto = photoFile ? await savePlayerPhoto(photoFile, `staff-${id}`) : null;
   const item = {
     id,
     teamId: state.activeTeamId,
     name: staffDialog.querySelector("#staff-name").value.trim(),
     role: staffDialog.querySelector("#staff-role").value.trim(),
-    phone: staffDialog.querySelector("#staff-phone").value.trim(),
-    email: staffDialog.querySelector("#staff-email").value.trim()
+    photo: uploadedPhoto?.url || staffPhotoInput.value,
+    photoPath: uploadedPhoto?.path || existing?.photoPath || ""
   };
   if (!item.name || !item.role) return;
   const index = state.staff.findIndex((staffItem) => staffItem.id === id);
   if (index >= 0) state.staff[index] = item;
   else state.staff.push(item);
+  if (uploadedPhoto?.path && existing?.photoPath && existing.photoPath !== uploadedPhoto.path) {
+    supabaseDeletePlayerPhoto(existing.photoPath);
+  }
   saveState();
   staffDialog.close();
   render();
@@ -213,6 +224,7 @@ deleteStaffButton.addEventListener("click", () => {
   const item = state.staff.find((staffItem) => staffItem.id === id);
   if (!item || !confirm(`¿Eliminar a ${item.name} del staff?`)) return;
   state.staff = state.staff.filter((staffItem) => staffItem.id !== id);
+  if (item.photoPath) supabaseDeletePlayerPhoto(item.photoPath);
   saveState();
   staffDialog.close();
   render();
@@ -509,8 +521,8 @@ function loadState() {
             teamId: migrateTeamId(item.teamId),
             name: String(item.name || ""),
             role: String(item.role || ""),
-            phone: String(item.phone || ""),
-            email: String(item.email || "")
+            photo: String(item.photo || ""),
+            photoPath: String(item.photoPath || item.photo_path || "")
           }))
         : [],
       matches: shouldResetMatches
@@ -915,8 +927,8 @@ function applyRemoteAppState(remoteAppState, preferLocal) {
         teamId: migrateTeamId(item.teamId),
         name: String(item.name),
         role: String(item.role || ""),
-        phone: String(item.phone || ""),
-        email: String(item.email || "")
+        photo: String(item.photo || ""),
+        photoPath: String(item.photoPath || item.photo_path || "")
       }));
   }
   const profiles = remoteAppState.playerProfiles || {};
@@ -1119,8 +1131,9 @@ function openStaffDialog(id = "") {
   staffDialog.querySelector("#staff-id").value = item?.id || "";
   staffDialog.querySelector("#staff-name").value = item?.name || "";
   staffDialog.querySelector("#staff-role").value = item?.role || "";
-  staffDialog.querySelector("#staff-phone").value = item?.phone || "";
-  staffDialog.querySelector("#staff-email").value = item?.email || "";
+  staffPhotoInput.value = item?.photo || "";
+  staffPhotoFileInput.value = "";
+  updateStaffPhotoPreview(item?.photo || "");
   deleteStaffButton.style.display = item ? "inline-flex" : "none";
   staffDialog.querySelector("#save-staff-button").textContent = item ? "Guardar cambios" : "Crear miembro";
   staffDialog.showModal();
@@ -1349,15 +1362,14 @@ function renderPlayerCard(item) {
 }
 
 function renderStaffCard(item) {
-  const contact = [item.phone, item.email].filter(Boolean).map(escapeHtml).join(" · ");
+  const photoStyle = item.photo ? `style="background-image:url('${escapeAttr(item.photo)}')"` : "";
   return `
     <article class="staff-card">
       <div class="staff-main">
-        <div class="staff-avatar">${initials(item.name)}</div>
+        <div class="staff-avatar" ${photoStyle}>${item.photo ? "" : initials(item.name)}</div>
         <div>
           <h3>${escapeHtml(item.name)}</h3>
           <div class="staff-role">${escapeHtml(item.role)}</div>
-          ${contact ? `<div class="meta staff-contact">${contact}</div>` : ""}
         </div>
       </div>
       <button class="secondary-button staff-edit-button" data-edit-staff="${item.id}" type="button">Editar</button>
@@ -2628,6 +2640,11 @@ function nextRound() {
 function updatePhotoPreview(photo) {
   playerPhotoPreview.classList.toggle("has-photo", Boolean(photo));
   playerPhotoPreview.style.backgroundImage = photo ? `url("${photo}")` : "";
+}
+
+function updateStaffPhotoPreview(photo) {
+  staffPhotoPreview.classList.toggle("has-photo", Boolean(photo));
+  staffPhotoPreview.style.backgroundImage = photo ? `url("${photo}")` : "";
 }
 
 function readFileAsDataUrl(file) {
