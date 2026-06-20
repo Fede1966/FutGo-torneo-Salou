@@ -8,7 +8,7 @@ const TEAM_NAME = "Alevín masculino";
 const DEFAULT_TEAM_ID = "alevin-masculino";
 const DEFAULT_TEAMS_VERSION = 3;
 const PLAYERS_RESET_VERSION = 2;
-const MATCHES_RESET_VERSION = 1;
+const MATCHES_RESET_VERSION = 2;
 const DEFAULT_VISIBLE_TEAM = {
   id: "alevin-masculino",
   name: "Alevín masculino"
