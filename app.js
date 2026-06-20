@@ -100,6 +100,7 @@ const initialState = {
   teams: structuredClone(DEFAULT_VISIBLE_TEAMS),
   activeTeamId: DEFAULT_VISIBLE_TEAM.id,
   players: [],
+  staff: [],
   matches: [],
   selectedMatchId: "",
   selectedPlayerId: "",
@@ -137,6 +138,85 @@ const playerPhotoInput = document.querySelector("#player-photo");
 const playerPhotoFileInput = document.querySelector("#player-photo-file");
 const playerPhotoPreview = document.querySelector("#player-photo-preview");
 const deletePlayerModalButton = document.querySelector("#delete-player-modal-button");
+
+const staffDialog = document.createElement("dialog");
+staffDialog.id = "staff-dialog";
+staffDialog.className = "modal";
+staffDialog.innerHTML = `
+  <form method="dialog" id="staff-form" class="modal-card staff-modal-card">
+    <div class="modal-header">
+      <h2 id="staff-modal-title">Nuevo miembro del staff</h2>
+      <button class="icon-button" value="cancel" type="submit" aria-label="Cerrar">×</button>
+    </div>
+    <input type="hidden" id="staff-id" />
+    <label>
+      Nombre completo
+      <input id="staff-name" required maxlength="80" />
+    </label>
+    <label>
+      Cargo o función
+      <input id="staff-role" required maxlength="60" list="staff-role-options" placeholder="Ejemplo: Entrenador/a" />
+      <datalist id="staff-role-options">
+        <option value="Entrenador/a"></option>
+        <option value="Segundo/a entrenador/a"></option>
+        <option value="Preparador/a físico/a"></option>
+        <option value="Entrenador/a de porteros"></option>
+        <option value="Fisioterapeuta"></option>
+        <option value="Delegado/a"></option>
+      </datalist>
+    </label>
+    <div class="form-grid">
+      <label>
+        Teléfono opcional
+        <input id="staff-phone" type="tel" maxlength="30" />
+      </label>
+      <label>
+        Email opcional
+        <input id="staff-email" type="email" maxlength="120" />
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="danger-button" id="delete-staff-button" type="button">Eliminar</button>
+      <button class="secondary-button" value="cancel" type="submit">Cancelar</button>
+      <button class="primary-button" id="save-staff-button" value="default" type="submit">Guardar</button>
+    </div>
+  </form>
+`;
+document.body.append(staffDialog);
+
+const staffForm = staffDialog.querySelector("#staff-form");
+const deleteStaffButton = staffDialog.querySelector("#delete-staff-button");
+
+staffForm.addEventListener("submit", (event) => {
+  if (event.submitter?.value === "cancel") return;
+  event.preventDefault();
+  const id = staffDialog.querySelector("#staff-id").value || crypto.randomUUID();
+  const item = {
+    id,
+    teamId: state.activeTeamId,
+    name: staffDialog.querySelector("#staff-name").value.trim(),
+    role: staffDialog.querySelector("#staff-role").value.trim(),
+    phone: staffDialog.querySelector("#staff-phone").value.trim(),
+    email: staffDialog.querySelector("#staff-email").value.trim()
+  };
+  if (!item.name || !item.role) return;
+  const index = state.staff.findIndex((staffItem) => staffItem.id === id);
+  if (index >= 0) state.staff[index] = item;
+  else state.staff.push(item);
+  saveState();
+  staffDialog.close();
+  render();
+});
+
+deleteStaffButton.addEventListener("click", () => {
+  const id = staffDialog.querySelector("#staff-id").value;
+  const item = state.staff.find((staffItem) => staffItem.id === id);
+  if (!item || !confirm(`¿Eliminar a ${item.name} del staff?`)) return;
+  state.staff = state.staff.filter((staffItem) => staffItem.id !== id);
+  saveState();
+  staffDialog.close();
+  render();
+});
 
 document.querySelectorAll(".nav-button").forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
@@ -267,6 +347,28 @@ matchForm.addEventListener("submit", (event) => {
 
 render();
 initializeSupabase();
+
+// Leer hash de la URL para seleccionar la vista adecuada según rol
+function applyHashToView() {
+  try {
+    const hash = (location.hash || '').replace(/^#/, '').toLowerCase();
+    if (!hash) return;
+    // Mapear hashes a vistas de la app
+    const map = {
+      admin: 'squad',
+      responsable: 'matches',
+      tecnico: 'squad'
+    };
+    const view = map[hash];
+    if (view) setView(view);
+  } catch (e) {
+    console.error('applyHashToView error', e);
+  }
+}
+
+// aplicar al cargar y cuando cambie el hash
+applyHashToView();
+window.addEventListener('hashchange', applyHashToView);
 
 function player(id, name, number, birthdate, position, laterality = "Diestro", teamId = DEFAULT_TEAM_ID) {
   return {
@@ -401,6 +503,16 @@ function loadState() {
             ratings: normalizePlayerRatings(item.ratings),
             reports: normalizePlayerReports(item.reports)
           })) || structuredClone(initialState.players),
+      staff: Array.isArray(saved.staff)
+        ? saved.staff.map((item) => ({
+            id: String(item.id || crypto.randomUUID()),
+            teamId: migrateTeamId(item.teamId),
+            name: String(item.name || ""),
+            role: String(item.role || ""),
+            phone: String(item.phone || ""),
+            email: String(item.email || "")
+          }))
+        : [],
       matches: shouldResetMatches
         ? []
         : saved.matches
@@ -758,6 +870,7 @@ function toRemoteAppStateLineup() {
         matchesResetVersion: MATCHES_RESET_VERSION,
         teams: state.teams,
         activeTeamId: state.activeTeamId,
+        staff: state.staff,
         playerProfiles: Object.fromEntries(
           state.players.map((item) => [item.id, playerProfileSnapshot(item)])
         )
@@ -793,6 +906,18 @@ function applyRemoteAppState(remoteAppState, preferLocal) {
   }
   if (!preferLocal && state.teams.some((item) => item.id === remoteAppState.activeTeamId)) {
     state.activeTeamId = remoteAppState.activeTeamId;
+  }
+  if (!preferLocal && Array.isArray(remoteAppState.staff)) {
+    state.staff = remoteAppState.staff
+      .filter((item) => item?.id && item?.name)
+      .map((item) => ({
+        id: String(item.id),
+        teamId: migrateTeamId(item.teamId),
+        name: String(item.name),
+        role: String(item.role || ""),
+        phone: String(item.phone || ""),
+        email: String(item.email || "")
+      }));
   }
   const profiles = remoteAppState.playerProfiles || {};
   state.players = state.players.map((item) => {
@@ -964,6 +1089,10 @@ function activePlayers() {
   return state.players.filter((item) => (item.teamId || DEFAULT_TEAM_ID) === state.activeTeamId);
 }
 
+function activeStaff() {
+  return state.staff.filter((item) => (item.teamId || DEFAULT_TEAM_ID) === state.activeTeamId);
+}
+
 function activeMatches() {
   return state.matches.filter((item) => (item.teamId || DEFAULT_TEAM_ID) === state.activeTeamId);
 }
@@ -980,6 +1109,21 @@ function uniqueTeamId(name) {
   let suffix = 2;
   while (state.teams.some((item) => item.id === id)) id = `${base}-${suffix++}`;
   return id;
+}
+
+function openStaffDialog(id = "") {
+  const item = state.staff.find((staffItem) => staffItem.id === id);
+  staffDialog.querySelector("#staff-modal-title").textContent = item
+    ? "Editar miembro del staff"
+    : "Nuevo miembro del staff";
+  staffDialog.querySelector("#staff-id").value = item?.id || "";
+  staffDialog.querySelector("#staff-name").value = item?.name || "";
+  staffDialog.querySelector("#staff-role").value = item?.role || "";
+  staffDialog.querySelector("#staff-phone").value = item?.phone || "";
+  staffDialog.querySelector("#staff-email").value = item?.email || "";
+  deleteStaffButton.style.display = item ? "inline-flex" : "none";
+  staffDialog.querySelector("#save-staff-button").textContent = item ? "Guardar cambios" : "Crear miembro";
+  staffDialog.showModal();
 }
 
 function openTeamDialog(teamId = "") {
@@ -1019,11 +1163,13 @@ async function deleteTeam(teamId) {
     return;
   }
   const players = state.players.filter((playerItem) => playerItem.teamId === teamId);
+  const staff = state.staff.filter((staffItem) => staffItem.teamId === teamId);
   const matches = state.matches.filter((matchItem) => matchItem.teamId === teamId);
-  const message = `¿Eliminar ${item.name}? También se eliminarán ${players.length} jugadores y ${matches.length} partidos de este equipo.`;
+  const message = `¿Eliminar ${item.name}? También se eliminarán ${players.length} jugadores, ${staff.length} miembros del staff y ${matches.length} partidos de este equipo.`;
   if (!confirm(message)) return;
 
   state.players = state.players.filter((playerItem) => playerItem.teamId !== teamId);
+  state.staff = state.staff.filter((staffItem) => staffItem.teamId !== teamId);
   state.matches = state.matches.filter((matchItem) => matchItem.teamId !== teamId);
   state.teams = state.teams.filter((team) => team.id !== teamId);
   state.activeTeamId = state.teams[0].id;
@@ -1097,6 +1243,7 @@ function pageTitleForView(view) {
 
 function renderSquad() {
   const players = activePlayers();
+  const staff = activeStaff();
   views.squad.innerHTML = `
     <div class="team-switcher panel">
       <label>
@@ -1109,21 +1256,50 @@ function renderSquad() {
       </label>
       <div class="team-switcher-summary">
         <strong>${escapeHtml(currentTeam().name)}</strong>
-        <span class="meta">${players.length} jugadores · ${activeMatches().length} partidos</span>
+        <span class="meta">${players.length} jugadores · ${staff.length} staff · ${activeMatches().length} partidos</span>
       </div>
       <div class="team-switcher-actions">
         <button class="secondary-button" id="edit-team-button" type="button">Editar equipo</button>
         <button class="primary-button" id="add-team-button" type="button">Añadir equipo</button>
       </div>
     </div>
-    <div class="squad-grid">
-      ${players
-        .slice()
-        .sort((a, b) => a.number - b.number)
-        .map(renderPlayerCard)
-        .join("")}
-    </div>
-    ${players.length ? "" : `<div class="empty-state">Este equipo aún no tiene jugadores. Usa “Añadir jugador” para crear su plantilla.</div>`}
+    <section class="squad-section">
+      <div class="squad-section-heading">
+        <div>
+          <p class="eyebrow">Plantilla</p>
+          <h2>Jugadores</h2>
+        </div>
+        <span class="section-count">${players.length}</span>
+      </div>
+      <div class="squad-grid">
+        ${players
+          .slice()
+          .sort((a, b) => a.number - b.number)
+          .map(renderPlayerCard)
+          .join("")}
+      </div>
+      ${players.length ? "" : `<div class="empty-state">Este equipo aún no tiene jugadores. Usa “Añadir jugador” para crear su plantilla.</div>`}
+    </section>
+    <section class="staff-section panel">
+      <div class="squad-section-heading staff-section-heading">
+        <div>
+          <p class="eyebrow">Equipo técnico</p>
+          <h2>Staff</h2>
+        </div>
+        <div class="row-actions">
+          <span class="section-count">${staff.length}</span>
+          <button class="primary-button" id="add-staff-button" type="button">Añadir al staff</button>
+        </div>
+      </div>
+      <div class="staff-grid">
+        ${staff
+          .slice()
+          .sort((a, b) => a.role.localeCompare(b.role, "es"))
+          .map(renderStaffCard)
+          .join("")}
+      </div>
+      ${staff.length ? "" : `<div class="staff-empty">Todavía no hay miembros del staff en este equipo.</div>`}
+    </section>
   `;
 
   views.squad.querySelector("#team-selector").addEventListener("change", (event) => {
@@ -1135,6 +1311,7 @@ function renderSquad() {
   });
   views.squad.querySelector("#edit-team-button").addEventListener("click", () => openTeamDialog(state.activeTeamId));
   views.squad.querySelector("#add-team-button").addEventListener("click", () => openTeamDialog());
+  views.squad.querySelector("#add-staff-button").addEventListener("click", () => openStaffDialog());
   views.squad.querySelectorAll("[data-edit-player]").forEach((button) => {
     button.addEventListener("click", () => openPlayerDialog(button.dataset.editPlayer));
   });
@@ -1144,6 +1321,9 @@ function renderSquad() {
       state.activePlayerTab = "statistics";
       setView("playerDetail");
     });
+  });
+  views.squad.querySelectorAll("[data-edit-staff]").forEach((button) => {
+    button.addEventListener("click", () => openStaffDialog(button.dataset.editStaff));
   });
 }
 
@@ -1164,6 +1344,23 @@ function renderPlayerCard(item) {
         <button class="primary-button" data-open-player="${item.id}" type="button">Ver ficha</button>
         <button class="secondary-button" data-edit-player="${item.id}" type="button">Editar</button>
       </div>
+    </article>
+  `;
+}
+
+function renderStaffCard(item) {
+  const contact = [item.phone, item.email].filter(Boolean).map(escapeHtml).join(" · ");
+  return `
+    <article class="staff-card">
+      <div class="staff-main">
+        <div class="staff-avatar">${initials(item.name)}</div>
+        <div>
+          <h3>${escapeHtml(item.name)}</h3>
+          <div class="staff-role">${escapeHtml(item.role)}</div>
+          ${contact ? `<div class="meta staff-contact">${contact}</div>` : ""}
+        </div>
+      </div>
+      <button class="secondary-button staff-edit-button" data-edit-staff="${item.id}" type="button">Editar</button>
     </article>
   `;
 }

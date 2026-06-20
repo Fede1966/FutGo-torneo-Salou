@@ -311,6 +311,122 @@ button {
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 }
 
+.squad-section {
+  margin-top: 20px;
+}
+
+.squad-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.squad-section-heading h2,
+.squad-section-heading p {
+  margin: 0;
+}
+
+.squad-section-heading h2 {
+  margin-top: 3px;
+  font-size: 1.25rem;
+}
+
+.section-count {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 9px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: #e7eaee;
+  font-size: .78rem;
+  font-weight: 850;
+}
+
+.staff-section {
+  margin-top: 26px;
+  padding: 16px;
+}
+
+.staff-section-heading {
+  margin-bottom: 14px;
+}
+
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 280px));
+  gap: 12px;
+}
+
+.staff-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 84px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.staff-main {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.staff-avatar {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--ink);
+  font-size: .76rem;
+  font-weight: 900;
+}
+
+.staff-card h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: .94rem;
+}
+
+.staff-role {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+.staff-contact {
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  font-size: .7rem;
+}
+
+.staff-edit-button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: .76rem;
+}
+
+.staff-empty {
+  padding: 14px;
+  border: 1px dashed #c6ccd3;
+  border-radius: 8px;
+  color: var(--muted);
+  background: #fafbfc;
+  font-size: .85rem;
+}
+
 .player-card {
   padding: 14px;
   display: grid;
@@ -2026,6 +2142,20 @@ button:focus-visible {
 }
 
 @media (max-width: 560px) {
+  .staff-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .staff-section-heading .row-actions {
+    display: grid;
+    grid-template-columns: auto 1fr;
+  }
+
   .detail-tabs {
     overflow-x: auto;
     white-space: nowrap;
