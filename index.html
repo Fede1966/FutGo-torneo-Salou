@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FutGo | Gestión técnica</title>
-    <link rel="stylesheet" href="styles.css?v=20260620-3" />
+    <link rel="stylesheet" href="styles.css?v=20260620-4" />
   </head>
   <body>
     <div class="app-shell">
@@ -126,7 +126,7 @@
           <button class="icon-button" value="cancel" type="submit" aria-label="Cerrar">×</button>
         </div>
         <input type="hidden" id="match-id" />
-        <div class="form-grid">
+        <div class="form-grid match-schedule-grid">
           <label>
             Jornada
             <input id="match-round" required type="number" min="1" />
@@ -134,6 +134,10 @@
           <label>
             Fecha
             <input id="match-date" type="date" />
+          </label>
+          <label>
+            Hora
+            <input id="match-time" type="time" step="300" />
           </label>
         </div>
         <div class="form-grid">
@@ -198,6 +202,6 @@
       </form>
     </dialog>
 
-    <script src="app.js?v=20260620-10"></script>
+    <script src="app.js?v=20260620-11"></script>
   </body>
 </html>

@@ -1895,6 +1895,10 @@ button:focus-visible {
   gap: 12px;
 }
 
+.match-schedule-grid {
+  grid-template-columns: minmax(76px, .45fr) minmax(155px, 1.35fr) minmax(115px, .7fr);
+}
+
 .empty-state {
   padding: 24px;
   text-align: center;

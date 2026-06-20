@@ -227,6 +227,7 @@ matchForm.addEventListener("submit", (event) => {
     teamId: state.activeTeamId,
     round: Number(document.querySelector("#match-round").value),
     date: document.querySelector("#match-date").value,
+    time: document.querySelector("#match-time").value,
     home: document.querySelector("#match-home").value.trim(),
     away: document.querySelector("#match-away").value.trim(),
     status: document.querySelector("#match-status").value,
@@ -294,6 +295,7 @@ function match(id, round, home, away, date, status, score, teamId = DEFAULT_TEAM
     home,
     away,
     date,
+    time: "",
     status,
     score,
     teamStats: emptyTeamMatchStats(),
@@ -407,6 +409,7 @@ function loadState() {
             ...item,
             updatedAt: Number(item.updatedAt) || 0,
             teamId: migrateTeamId(item.teamId),
+            time: item.time || "",
             teamStats: normalizeTeamMatchStats(item.teamStats),
             notes: item.notes || "",
             lineupSheets: normalizeLineupSheets(item.lineupSheets, item),
@@ -839,6 +842,7 @@ function fromRemoteMatch(item, lineupData, plan) {
     home: item.home,
     away: item.away,
     date: item.date || "",
+    time: lineupData?.time || "",
     status: item.status,
     score: item.score || "",
     teamStats: normalizeTeamMatchStats(lineupData?.teamStats),
@@ -863,6 +867,7 @@ function toRemoteLineup(item) {
       __teamId: item.teamId || DEFAULT_TEAM_ID,
       __teamName: teamName(item.teamId),
       __teamStats: normalizeTeamMatchStats(item.teamStats),
+      __matchTime: item.time || "",
       __matchNotes: item.notes || "",
       __lineupSheets: normalizeLineupSheets(item.lineupSheets, item),
       __updatedAt: Number(item.updatedAt) || Date.now()
@@ -877,6 +882,7 @@ function parseRemoteLineup(value) {
   const teamId = lineup.__teamId || DEFAULT_TEAM_ID;
   const remoteTeamName = lineup.__teamName || "";
   const teamStats = normalizeTeamMatchStats(lineup.__teamStats);
+  const time = lineup.__matchTime || "";
   const notes = lineup.__matchNotes || "";
   const lineupSheets = lineup.__lineupSheets || null;
   const updatedAt = Number(lineup.__updatedAt) || 0;
@@ -884,10 +890,11 @@ function parseRemoteLineup(value) {
   delete lineup.__teamId;
   delete lineup.__teamName;
   delete lineup.__teamStats;
+  delete lineup.__matchTime;
   delete lineup.__matchNotes;
   delete lineup.__lineupSheets;
   delete lineup.__updatedAt;
-  return { lineup, formation, teamId, teamName: remoteTeamName, teamStats, notes, lineupSheets, updatedAt };
+  return { lineup, formation, teamId, teamName: remoteTeamName, teamStats, time, notes, lineupSheets, updatedAt };
 }
 
 function toRemotePlan(item) {
@@ -1398,7 +1405,7 @@ function renderPlayerReports(item, body) {
                         <div>
                           <span class="tag">Jornada ${matchItem.round}</span>
                           <h3>${escapeHtml(matchItem.home)} vs ${escapeHtml(matchItem.away)}</h3>
-                          <p class="meta">${matchItem.date ? formatDate(matchItem.date) : "Fecha pendiente"} · ${escapeHtml(matchItem.score || "Sin resultado")}</p>
+                          <p class="meta">${escapeHtml(formatMatchSchedule(matchItem))} · ${escapeHtml(matchItem.score || "Sin resultado")}</p>
                         </div>
                         <div class="player-report-heading-actions">
                           <label class="match-rating-control">
@@ -1640,7 +1647,7 @@ function renderMatchCard(item) {
         </div>
         <strong>${escapeHtml(item.score || "-")}</strong>
       </div>
-      <div class="meta">${item.date ? formatDate(item.date) : "Fecha pendiente"} · ${escapeHtml(item.status)}</div>
+      <div class="meta">${escapeHtml(formatMatchSchedule(item))} · ${escapeHtml(item.status)}</div>
       <div class="row-actions">
         <button class="primary-button" data-open-match="${item.id}" type="button">Abrir</button>
         <button class="secondary-button" data-edit-match="${item.id}" type="button">Editar</button>
@@ -1663,7 +1670,7 @@ function renderMatchDetail() {
       <div class="detail-title">
         <p class="eyebrow">Jornada ${item.round}</p>
         <h2>${escapeHtml(item.home)} vs ${escapeHtml(item.away)}</h2>
-        <div class="meta">${item.date ? formatDate(item.date) : "Fecha pendiente"} · ${escapeHtml(item.status)} · Resultado ${escapeHtml(item.score || "-")}</div>
+        <div class="meta">${escapeHtml(formatMatchSchedule(item))} · ${escapeHtml(item.status)} · Resultado ${escapeHtml(item.score || "-")}</div>
       </div>
       <div class="detail-actions">
         <button class="secondary-button" id="back-to-matches" type="button">Volver</button>
@@ -2370,6 +2377,7 @@ function openMatchDialog(id, returnToPlayerReports = false) {
   document.querySelector("#match-id").value = item?.id || "";
   document.querySelector("#match-round").value = item?.round || nextRound();
   document.querySelector("#match-date").value = item?.date || "";
+  document.querySelector("#match-time").value = item?.time || "";
   document.querySelector("#match-home").value = item?.home || currentTeam().name;
   document.querySelector("#match-away").value = item?.away || "";
   document.querySelector("#match-status").value = item?.status || "Preparación";
@@ -2795,7 +2803,7 @@ async function downloadPlayerPdf(item) {
                   ({ match, report }) => `
                     <article class="report">
                       <h3>Jornada ${match.round}: ${escapeHtml(match.home)} vs ${escapeHtml(match.away)}</h3>
-                      <div class="meta">${match.date ? formatDate(match.date) : "Fecha pendiente"} · ${report.minutes} minutos · Valoración ${report.rating ? `${report.rating} / 10` : "Sin valorar"}</div>
+                      <div class="meta">${escapeHtml(formatMatchSchedule(match))} · ${report.minutes} minutos · Valoración ${report.rating ? `${report.rating} / 10` : "Sin valorar"}</div>
                       <div class="report-stats">
                         ${renderPdfReportStat("Pases correctos", report.completedPasses)}
                         ${renderPdfReportStat("Pases fallados", report.failedPasses)}
@@ -3052,6 +3060,11 @@ function formatDate(value) {
     month: "2-digit",
     year: "numeric"
   }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatMatchSchedule(item) {
+  const date = item?.date ? formatDate(item.date) : "Fecha pendiente";
+  return item?.time ? `${date} · ${item.time} h` : date;
 }
 
 function calculateAge(value) {
