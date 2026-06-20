@@ -857,7 +857,7 @@ button {
   color: #fff;
   background: var(--red);
   background-size: cover;
-  background-position: center;
+  background-position: center 15%;
 }
 
 .photo-preview {

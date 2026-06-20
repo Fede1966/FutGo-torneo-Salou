@@ -43,7 +43,27 @@ const REMOVED_TEAM_NAMES = new Set([
   "ce ferreries juvenil preferente (b)",
   "ce ferreries juvenil nacional"
 ]);
-const REMOVED_MATCH_IDS = new Set(["b7023b94-d831-4795-aab4-c861b3a7a7cd"]);
+const REMOVED_MATCH_IDS = new Set([
+  "b7023b94-d831-4795-aab4-c861b3a7a7cd",
+  "m1",
+  "m2",
+  "f0325d7b-14c4-4adb-b1c7-75ea050dbddd",
+  "1d61b6d4-8097-4fee-968b-8e8dca5c3746",
+  "d6c5eb44-c2ce-4653-8b7e-7e470e527cbc",
+  "f7d84c72-95b3-44bc-82a7-b04092917c89",
+  "3b666054-9c01-45aa-8ee6-8049587e111e",
+  "c320eb00-2661-43c0-8fbe-e9ebe5a952ca",
+  "4a0c4430-dae5-4494-ad1e-9290a4be8f01",
+  "6862254c-34d1-465c-a30e-cbfa64a206fb",
+  "4fc0dd12-0483-45de-aba5-86924951d265",
+  "797dfdf7-9867-4edd-829a-20961bcd4ee7",
+  "2ad826e8-f35f-4fe7-981b-cae0468414e0",
+  "8f41eb85-6c9f-487a-a489-5eb2af2d3957",
+  "50d012c8-1fe1-4130-9799-6d947fb8486a",
+  "afd3e1a2-3a85-4059-a79c-e387c3806023",
+  "1af5afdd-3d02-4f0c-9047-a73da4781e1a",
+  "da23bd14-1617-4b02-ac10-5f71fc6580bd"
+]);
 const FINAL_STANDINGS = [];
 const PLAN_SECTIONS = [
   ["offensive", "Acciones ofensivas"],
