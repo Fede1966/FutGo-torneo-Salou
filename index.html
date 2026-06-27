@@ -47,7 +47,13 @@
           </div>
         </div>
         <nav class="nav-tabs" aria-label="Navegación principal">
-          <button class="nav-button active" data-view="squad">Equipos</button>
+          <div class="nav-team-dropdown" id="nav-team-dropdown">
+            <button class="nav-button nav-team-button active" id="nav-team-button" data-view="squad" type="button" aria-haspopup="true" aria-expanded="false">
+              Equipos
+              <span class="nav-team-caret" aria-hidden="true">▾</span>
+            </button>
+            <div class="nav-team-menu" id="nav-team-menu" hidden></div>
+          </div>
           <button class="nav-button" data-view="matches">Partidos</button>
           <button class="nav-button" data-view="standings">Clasificación</button>
           <button class="nav-button" data-view="statistics">Estadísticas</button>

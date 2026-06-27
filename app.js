@@ -115,6 +115,7 @@ let remoteSaveTimer = null;
 let isPullingRemote = false;
 let supportsRemotePlayerProfiles = false;
 let returnToPlayerReportsAfterMatchSave = false;
+let isTeamNavDropdownOpen = false;
 
 const views = {
   squad: document.querySelector("#squad-view"),
@@ -127,6 +128,9 @@ const views = {
 
 const pageTitle = document.querySelector("#page-title");
 const contextActionButton = document.querySelector("#context-action-button");
+const navTeamDropdown = document.querySelector("#nav-team-dropdown");
+const navTeamButton = document.querySelector("#nav-team-button");
+const navTeamMenu = document.querySelector("#nav-team-menu");
 const playerDialog = document.querySelector("#player-dialog");
 const playerForm = document.querySelector("#player-form");
 const matchDialog = document.querySelector("#match-dialog");
@@ -265,7 +269,27 @@ staffProfileDialog.querySelector("#edit-staff-profile").addEventListener("click"
 });
 
 document.querySelectorAll(".nav-button").forEach((button) => {
-  button.addEventListener("click", () => setView(button.dataset.view));
+  button.addEventListener("click", (event) => {
+    if (button.dataset.view === "squad") {
+      event.stopPropagation();
+      isTeamNavDropdownOpen = !isTeamNavDropdownOpen;
+      state.activeView = "squad";
+      saveState();
+      render();
+      return;
+    }
+
+    closeTeamNavDropdown();
+    setView(button.dataset.view);
+  });
+});
+
+document.addEventListener("click", (event) => {
+  if (!navTeamDropdown.contains(event.target)) closeTeamNavDropdown();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeTeamNavDropdown();
 });
 
 teamForm.addEventListener("submit", (event) => {
@@ -1099,6 +1123,7 @@ function parseRemotePlan(item) {
 }
 
 function setView(view) {
+  closeTeamNavDropdown();
   state.activeView = view;
   saveState();
   render();
@@ -1274,6 +1299,7 @@ function render() {
   contextActionButton.textContent = state.activeView === "matches" ? "Añadir partido" : "Añadir jugador";
   contextActionButton.style.display = ["detail", "playerDetail", "standings", "statistics"].includes(state.activeView) ? "none" : "inline-flex";
   pageTitle.textContent = pageTitleForView(state.activeView);
+  renderTeamNavDropdown();
 
   renderSquad();
   renderMatches();
@@ -1301,20 +1327,51 @@ function pageTitleForView(view) {
   return titles[view] || "Equipos";
 }
 
+function changeActiveTeam(teamId) {
+  state.activeTeamId = teamId;
+  state.selectedPlayerId = activePlayers()[0]?.id || "";
+  state.selectedMatchId = activeMatches()[0]?.id || "";
+  saveState();
+  render();
+}
+
+function closeTeamNavDropdown() {
+  if (!isTeamNavDropdownOpen) return;
+  isTeamNavDropdownOpen = false;
+  renderTeamNavDropdown();
+}
+
+function renderTeamNavDropdown() {
+  navTeamButton.setAttribute("aria-expanded", String(isTeamNavDropdownOpen));
+  navTeamDropdown.classList.toggle("open", isTeamNavDropdownOpen);
+  navTeamMenu.hidden = !isTeamNavDropdownOpen;
+  navTeamMenu.innerHTML = state.teams
+    .map(
+      (item) => `
+        <button class="nav-team-option ${item.id === state.activeTeamId ? "active" : ""}" data-nav-team="${item.id}" type="button">
+          ${escapeHtml(item.name)}
+        </button>
+      `
+    )
+    .join("");
+
+  navTeamMenu.querySelectorAll("[data-nav-team]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      isTeamNavDropdownOpen = false;
+      state.activeView = "squad";
+      changeActiveTeam(button.dataset.navTeam);
+    });
+  });
+}
+
 function renderSquad() {
   const players = activePlayers();
   const staff = activeStaff();
   views.squad.innerHTML = `
     <div class="team-switcher panel">
-      <label>
-        Equipo
-        <select id="team-selector">
-          ${state.teams
-            .map((item) => `<option value="${item.id}" ${item.id === state.activeTeamId ? "selected" : ""}>${escapeHtml(item.name)}</option>`)
-            .join("")}
-        </select>
-      </label>
       <div class="team-switcher-summary">
+        <span class="eyebrow">Equipo</span>
         <strong>${escapeHtml(currentTeam().name)}</strong>
         <span class="meta">${players.length} jugadores · ${staff.length} staff · ${activeMatches().length} partidos</span>
       </div>
@@ -1362,13 +1419,6 @@ function renderSquad() {
     </section>
   `;
 
-  views.squad.querySelector("#team-selector").addEventListener("change", (event) => {
-    state.activeTeamId = event.target.value;
-    state.selectedPlayerId = activePlayers()[0]?.id || "";
-    state.selectedMatchId = activeMatches()[0]?.id || "";
-    saveState();
-    render();
-  });
   views.squad.querySelector("#edit-team-button").addEventListener("click", () => openTeamDialog(state.activeTeamId));
   views.squad.querySelector("#add-team-button").addEventListener("click", () => openTeamDialog());
   views.squad.querySelector("#add-staff-button").addEventListener("click", () => openStaffDialog());
@@ -1907,10 +1957,7 @@ function renderMatches() {
     button.addEventListener("click", () => deleteMatch(button.dataset.deleteMatch));
   });
   views.matches.querySelector("#matches-team-selector").addEventListener("change", (event) => {
-    state.activeTeamId = event.target.value;
-    state.selectedMatchId = activeMatches()[0]?.id || "";
-    saveState();
-    render();
+    changeActiveTeam(event.target.value);
   });
 }
 

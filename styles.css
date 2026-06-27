@@ -119,8 +119,13 @@ button {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  overflow-x: auto;
+  overflow-x: visible;
   white-space: nowrap;
+}
+
+.nav-team-dropdown {
+  position: relative;
+  display: inline-flex;
 }
 
 .nav-button {
@@ -132,10 +137,66 @@ button {
   background: transparent;
 }
 
+.nav-team-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.nav-team-caret {
+  display: inline-block;
+  font-size: 0.78rem;
+  line-height: 1;
+  transition: transform 0.16s ease;
+}
+
 .nav-button.active,
-.nav-button:hover {
+.nav-button:hover,
+.nav-team-dropdown.open .nav-button {
   color: #fff;
   background: #2a3038;
+}
+
+.nav-team-dropdown.open .nav-team-caret {
+  transform: rotate(180deg);
+}
+
+.nav-team-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  min-width: 220px;
+  max-height: min(320px, 70vh);
+  overflow-y: auto;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #343b45;
+  border-radius: 8px;
+  background: #20252c;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.26);
+}
+
+.nav-team-menu[hidden] {
+  display: none;
+}
+
+.nav-team-option {
+  min-height: 38px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 10px;
+  color: #dce2ea;
+  background: transparent;
+  text-align: left;
+}
+
+.nav-team-option:hover,
+.nav-team-option.active {
+  color: #fff;
+  background: #343b45;
 }
 
 .main-content {
@@ -236,36 +297,16 @@ button {
 
 .team-switcher {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
-  align-items: end;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  align-items: center;
   gap: 18px;
   margin-bottom: 18px;
   padding: 18px;
 }
 
-.team-switcher label {
-  display: grid;
-  gap: 7px;
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.team-switcher select {
-  min-height: 44px;
-  color: var(--ink);
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 0 12px;
-  text-transform: none;
-}
-
 .team-switcher-summary {
   display: grid;
   gap: 4px;
-  align-self: center;
 }
 
 .team-switcher-summary strong {
@@ -2088,11 +2129,11 @@ button:focus-visible {
 
 @media (max-width: 920px) {
   .team-switcher {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
   .team-switcher-actions {
-    grid-column: 1 / -1;
     justify-content: flex-end;
   }
 
@@ -2119,6 +2160,17 @@ button:focus-visible {
   .nav-tabs {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .nav-team-dropdown,
+  .nav-team-dropdown .nav-button {
+    width: 100%;
+  }
+
+  .nav-team-menu {
+    right: 0;
+    min-width: min(280px, 88vw);
   }
 
   .main-content {
