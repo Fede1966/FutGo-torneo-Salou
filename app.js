@@ -1526,7 +1526,9 @@ function renderPlayerDetail() {
 
 function renderPlayerStatistics(item, body) {
   const appearances = activeMatches().filter((matchItem) => matchItem.lineup?.[item.id]);
-  const playedAppearances = appearances.filter((matchItem) => Boolean(parseScore(matchItem.score)));
+  const playedAppearances = appearances.filter((matchItem) => {
+    return Boolean(parseScore(matchItem.score)) || playerReportHasData(playerReport(item, matchItem.id));
+  });
   const starts = activeMatches().filter((matchItem) => {
     const sheets = normalizeLineupSheets(matchItem.lineupSheets, matchItem);
     return sheets[ownTeamSide(matchItem)].some(
@@ -1872,8 +1874,14 @@ function renderMatches() {
   const matches = activeMatches();
   views.matches.innerHTML = `
     <div class="active-team-context">
-      <span class="eyebrow">Equipo seleccionado</span>
-      <strong>${escapeHtml(currentTeam().name)}</strong>
+      <label class="active-team-select-label">
+        Equipo
+        <select id="matches-team-selector">
+          ${state.teams
+            .map((item) => `<option value="${item.id}" ${item.id === state.activeTeamId ? "selected" : ""}>${escapeHtml(item.name)}</option>`)
+            .join("")}
+        </select>
+      </label>
     </div>
     <div class="match-grid">
       ${matches
@@ -1897,6 +1905,12 @@ function renderMatches() {
   });
   views.matches.querySelectorAll("[data-delete-match]").forEach((button) => {
     button.addEventListener("click", () => deleteMatch(button.dataset.deleteMatch));
+  });
+  views.matches.querySelector("#matches-team-selector").addEventListener("change", (event) => {
+    state.activeTeamId = event.target.value;
+    state.selectedMatchId = activeMatches()[0]?.id || "";
+    saveState();
+    render();
   });
 }
 
@@ -2380,6 +2394,14 @@ function syncLegacyLineup(item) {
 }
 
 function renderMatchInformation(item, body) {
+  const safeLink = (() => {
+    if (!item.link) return "";
+    try {
+      const u = new URL(item.link);
+      return (u.protocol === "http:" || u.protocol === "https:") ? item.link : "";
+    } catch { return ""; }
+  })();
+
   body.innerHTML = `
     <section class="panel match-information-panel">
       <div class="section-intro">
@@ -2390,11 +2412,20 @@ function renderMatchInformation(item, body) {
         <span class="meta">Los cambios se guardan automáticamente</span>
       </div>
       <label>
+        Enlace del partido
+        <input id="match-link" type="url" placeholder="https://ejemplo.com/partido" value="${escapeAttr(item.link || "")}" />
+      </label>
+      ${safeLink ? `<a class="match-link-preview" href="${escapeAttr(safeLink)}" target="_blank" rel="noopener noreferrer">Abrir enlace →</a>` : ""}
+      <label>
         Notas y observaciones
         <textarea id="match-notes" maxlength="12000" placeholder="Análisis del partido, incidencias, conclusiones y aspectos a mejorar...">${escapeHtml(item.notes || "")}</textarea>
       </label>
     </section>
   `;
+  body.querySelector("#match-link").addEventListener("input", (event) => {
+    item.link = event.target.value.trim();
+    saveMatchState(item);
+  });
   body.querySelector("#match-notes").addEventListener("input", (event) => {
     item.notes = event.target.value;
     saveMatchState(item);
@@ -3048,7 +3079,7 @@ async function downloadPlayerPdf(item) {
         <h2>Estadísticas</h2>
         <div class="metrics">
           ${renderPdfMetric("Alineaciones", appearances.length)}
-          ${renderPdfMetric("Partidos jugados", appearances.filter((matchItem) => parseScore(matchItem.score)).length)}
+          ${renderPdfMetric("Partidos jugados", appearances.filter((matchItem) => Boolean(parseScore(matchItem.score)) || playerReportHasData(playerReport(item, matchItem.id))).length)}
           ${renderPdfMetric("Minutos jugados", totals.minutes)}
           ${renderPdfMetric("Goles", totals.goals)}
           ${renderPdfMetric("Asistencias de gol", totals.assists)}
@@ -3261,7 +3292,7 @@ function buildPlayerStatistics() {
           (row) => row.playerId === item.id && row.role === "starter"
         );
       }).length;
-      const played = appearances.filter((matchItem) => Boolean(parseScore(matchItem.score))).length;
+      const played = appearances.filter((matchItem) => Boolean(parseScore(matchItem.score)) || playerReportHasData(playerReport(item, matchItem.id))).length;
       const totals = playerReportTotals(item);
       return {
         id: item.id,
