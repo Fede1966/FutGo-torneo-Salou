@@ -13,7 +13,7 @@ const USERS_RAW = [
 // Se hashean una vez al iniciar la función (cold start)
 const users = USERS_RAW.map(u => ({ ...u, passwordHash: bcrypt.hashSync(u.password, 10) }));
 
-module.exports = function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -22,7 +22,19 @@ module.exports = function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Método no permitido' });
 
-  const { email, password } = req.body || {};
+  // En Vercel serverless el body puede llegar sin parsear — lo manejamos en ambos casos
+  let parsed = {};
+  try {
+    if (req.body && typeof req.body === 'object') {
+      parsed = req.body;
+    } else {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      parsed = JSON.parse(Buffer.concat(chunks).toString() || '{}');
+    }
+  } catch { parsed = {}; }
+
+  const { email, password } = parsed;
   if (!email || !password) return res.status(400).json({ message: 'Faltan credenciales' });
 
   const user = users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
