@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FutGo | Gestión técnica</title>
     <link rel="stylesheet" href="styles.css?v=20260627-3" />
-    <link rel="stylesheet" href="login.css" />
+    <link rel="stylesheet" href="login.css?v=20260628-1" />
   </head>
   <body>
     <!-- Login overlay (bloquea la app hasta autenticación) -->
     <div id="login-overlay" class="login-shell login-overlay" aria-hidden="false">
       <div class="card">
+        <button id="login-close" class="login-close-button" type="button" aria-label="Cerrar acceso">×</button>
         <h1 id="login-title">Acceso a FutGo — Área técnica</h1>
         <form id="login-form" novalidate>
           <label for="email">Correo electrónico</label>
@@ -236,7 +237,7 @@
     </dialog>
 
     <script src="app.js?v=20260628-3"></script>
-    <script src="login.js"></script>
+    <script src="login.js?v=20260628-1"></script>
     <script>
       (function(){
         const overlay = document.getElementById('login-overlay');

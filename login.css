@@ -4,7 +4,9 @@ html,body{height:100%;margin:0;background:var(--bg)}
 .login-shell{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-shell.login-overlay{position:fixed;inset:0;z-index:9999;background:rgba(17,24,39,0.36);backdrop-filter:blur(3px)}
 .login-shell.login-overlay .card{max-width:520px;margin:0}
-.card{width:100%;max-width:420px;background:var(--card);padding:28px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.08)}
+.card{position:relative;width:100%;max-width:420px;background:var(--card);padding:28px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.08)}
+.login-close-button{position:absolute;top:14px;right:14px;width:34px;height:34px;border:1px solid #d9dee8;border-radius:8px;background:#fff;color:#111827;font-size:22px;line-height:1;cursor:pointer}
+.login-close-button:hover{background:#f4f6f8}
 h1{font-size:20px;margin:0 0 18px}
 label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
 input[type="email"],input[type="password"],input[type="text"]{width:100%;padding:10px 12px;margin-top:6px;border:1px solid #e6e9ef;border-radius:8px;font-size:15px}
