@@ -390,6 +390,7 @@ matchForm.addEventListener("submit", (event) => {
       chancesCreated: nonNegativeInteger(document.querySelector("#match-chances-created").value),
       chancesAgainst: nonNegativeInteger(document.querySelector("#match-chances-against").value)
     },
+    link: existing?.link || "",
     notes: existing?.notes || "",
     lineupSheets: existing?.lineupSheets || null,
     lineup: existing?.lineup || {},
@@ -471,6 +472,7 @@ function match(id, round, home, away, date, status, score, teamId = DEFAULT_TEAM
     status,
     score,
     teamStats: emptyTeamMatchStats(),
+    link: "",
     notes: "",
     lineupSheets: null,
     lineup: defaultLineup(),
@@ -593,6 +595,7 @@ function loadState() {
             teamId: migrateTeamId(item.teamId),
             time: item.time || "",
             teamStats: normalizeTeamMatchStats(item.teamStats),
+            link: item.link || "",
             notes: item.notes || "",
             lineupSheets: normalizeLineupSheets(item.lineupSheets, item),
             lineup: item.lineup || {},
@@ -1041,6 +1044,7 @@ function fromRemoteMatch(item, lineupData, plan) {
     status: item.status,
     score: item.score || "",
     teamStats: normalizeTeamMatchStats(lineupData?.teamStats),
+    link: lineupData?.link || "",
     notes: lineupData?.notes || "",
     lineupSheets: normalizeLineupSheets(lineupData?.lineupSheets, {
       ...item,
@@ -1063,6 +1067,7 @@ function toRemoteLineup(item) {
       __teamName: teamName(item.teamId),
       __teamStats: normalizeTeamMatchStats(item.teamStats),
       __matchTime: item.time || "",
+      __matchLink: item.link || "",
       __matchNotes: item.notes || "",
       __lineupSheets: normalizeLineupSheets(item.lineupSheets, item),
       __updatedAt: Number(item.updatedAt) || Date.now()
@@ -1078,6 +1083,7 @@ function parseRemoteLineup(value) {
   const remoteTeamName = lineup.__teamName || "";
   const teamStats = normalizeTeamMatchStats(lineup.__teamStats);
   const time = lineup.__matchTime || "";
+  const link = lineup.__matchLink || "";
   const notes = lineup.__matchNotes || "";
   const lineupSheets = lineup.__lineupSheets || null;
   const updatedAt = Number(lineup.__updatedAt) || 0;
@@ -1086,10 +1092,11 @@ function parseRemoteLineup(value) {
   delete lineup.__teamName;
   delete lineup.__teamStats;
   delete lineup.__matchTime;
+  delete lineup.__matchLink;
   delete lineup.__matchNotes;
   delete lineup.__lineupSheets;
   delete lineup.__updatedAt;
-  return { lineup, formation, teamId, teamName: remoteTeamName, teamStats, time, notes, lineupSheets, updatedAt };
+  return { lineup, formation, teamId, teamName: remoteTeamName, teamStats, time, link, notes, lineupSheets, updatedAt };
 }
 
 function toRemotePlan(item) {
