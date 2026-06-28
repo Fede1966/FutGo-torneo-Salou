@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Acceso · FutGo</title>
-    <link rel="stylesheet" href="login.css?v=20260628-1" />
+    <link rel="stylesheet" href="login.css?v=20260628-2" />
   </head>
   <body>
     <main class="login-shell" aria-labelledby="login-title">
@@ -22,7 +22,6 @@
           <div class="hint">Si no tienes cuenta, contacta con el administrador.</div>
 
           <button id="submit" class="primary" type="submit">Iniciar sesión</button>
-          <button id="guest-login" class="guest-button" type="button">Entrar como invitado</button>
 
           <div id="message" role="status" aria-live="polite"></div>
         </form>
@@ -33,10 +32,10 @@
       </div>
     </main>
 
-    <script src="login.js?v=20260628-2"></script>
+    <script src="login.js?v=20260628-3"></script>
     <script>
       (function(){
-        function enterAsGuestFallback(){
+        function goToGuestApp(){
           localStorage.removeItem('futgo_token');
           localStorage.setItem('futgo_user', JSON.stringify({
             id: 'guest',
@@ -47,8 +46,7 @@
           window.location.href = '/#invitado';
         }
 
-        document.getElementById('guest-login')?.addEventListener('click', enterAsGuestFallback);
-        document.getElementById('login-close')?.addEventListener('click', enterAsGuestFallback);
+        document.getElementById('login-close')?.addEventListener('click', goToGuestApp);
       })();
     </script>
   </body>

@@ -8,8 +8,7 @@
     <link rel="stylesheet" href="login.css?v=20260628-1" />
   </head>
   <body>
-    <!-- Login overlay (bloquea la app hasta autenticación) -->
-    <div id="login-overlay" class="login-shell login-overlay" aria-hidden="false">
+    <div id="login-overlay" class="login-shell login-overlay" aria-hidden="true" hidden>
       <div class="card">
         <button id="login-close" class="login-close-button" type="button" aria-label="Cerrar acceso">×</button>
         <h1 id="login-title">Acceso a FutGo — Área técnica</h1>
@@ -24,7 +23,6 @@
           <div class="hint">Si no tienes cuenta, contacta con el administrador.</div>
 
           <button id="submit" class="primary" type="submit">Iniciar sesión</button>
-          <button id="guest-login" class="guest-button" type="button">Entrar como invitado</button>
 
           <div id="message" role="status" aria-live="polite"></div>
         </form>
@@ -59,6 +57,7 @@
           <button class="nav-button" data-view="matches">Partidos</button>
           <button class="nav-button" data-view="standings">Clasificación</button>
           <button class="nav-button" data-view="statistics">Estadísticas</button>
+          <button class="nav-button auth-nav-button" id="open-login-button" type="button">Iniciar sesión</button>
         </nav>
       </aside>
 
@@ -236,13 +235,14 @@
       </form>
     </dialog>
 
-    <script src="app.js?v=20260628-3"></script>
-    <script src="login.js?v=20260628-2"></script>
+    <script src="app.js?v=20260628-4"></script>
+    <script src="login.js?v=20260628-3"></script>
     <script>
       (function(){
         const overlay = document.getElementById('login-overlay');
+        const openLoginButton = document.getElementById('open-login-button');
 
-        function enterAsGuestFallback(){
+        function setGuestMode(){
           localStorage.removeItem('futgo_token');
           localStorage.setItem('futgo_user', JSON.stringify({
             id: 'guest',
@@ -250,13 +250,25 @@
             email: '',
             role: 'invitado'
           }));
-          overlay.style.display = 'none';
-          overlay.setAttribute('aria-hidden','true');
+          closeLogin();
           document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
         }
 
-        document.getElementById('guest-login')?.addEventListener('click', enterAsGuestFallback);
-        document.getElementById('login-close')?.addEventListener('click', enterAsGuestFallback);
+        function openLogin(){
+          overlay.hidden = false;
+          overlay.style.display = 'flex';
+          overlay.setAttribute('aria-hidden','false');
+          document.getElementById('email')?.focus();
+        }
+
+        function closeLogin(){
+          overlay.hidden = true;
+          overlay.style.display = 'none';
+          overlay.setAttribute('aria-hidden','true');
+        }
+
+        openLoginButton?.addEventListener('click', openLogin);
+        document.getElementById('login-close')?.addEventListener('click', closeLogin);
 
         function isTokenValid(token) {
           if (!token) return false;
@@ -277,15 +289,10 @@
             user = null;
           }
           if (isTokenValid(token) || user?.role === 'invitado') {
-            overlay.style.display = 'none';
-            overlay.setAttribute('aria-hidden','true');
+            closeLogin();
             document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
           } else {
-            localStorage.removeItem('futgo_token');
-            localStorage.removeItem('futgo_user');
-            overlay.style.display = 'flex';
-            overlay.setAttribute('aria-hidden','false');
-            document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
+            setGuestMode();
           }
         }
         window.addEventListener('storage', update);

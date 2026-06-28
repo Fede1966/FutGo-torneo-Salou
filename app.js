@@ -177,7 +177,8 @@ function currentUser() {
 }
 
 function isReadOnlyMode() {
-  return currentUser()?.role === "invitado";
+  const user = currentUser();
+  return !user || user.role === "invitado";
 }
 
 function ensureCanEdit() {
@@ -316,6 +317,7 @@ staffProfileDialog.querySelector("#edit-staff-profile").addEventListener("click"
 
 document.querySelectorAll(".nav-button").forEach((button) => {
   button.addEventListener("click", (event) => {
+    if (!button.dataset.view) return;
     if (button.dataset.view === "squad") {
       event.stopPropagation();
       isTeamNavDropdownOpen = !isTeamNavDropdownOpen;

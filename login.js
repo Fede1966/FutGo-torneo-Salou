@@ -3,7 +3,6 @@ const emailEl = document.getElementById('email');
 const passwordEl = document.getElementById('password');
 const submitBtn = document.getElementById('submit');
 const messageEl = document.getElementById('message');
-const guestBtn = document.getElementById('guest-login');
 const closeBtn = document.getElementById('login-close');
 
 // API base: use local auth server in development, relative path in production
@@ -14,6 +13,16 @@ function setMessage(text, isError = true){
   messageEl.style.color = isError ? '#b91c1c' : '#065f46';
 }
 
+function closeLoginOverlay(){
+  const overlay = document.getElementById('login-overlay');
+  if(overlay){
+    overlay.hidden = true;
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+    return;
+  }
+}
+
 function enterAsGuest(){
   localStorage.removeItem('futgo_token');
   localStorage.setItem('futgo_user', JSON.stringify({
@@ -22,17 +31,8 @@ function enterAsGuest(){
     email: '',
     role: 'invitado'
   }));
-
-  const overlay = document.getElementById('login-overlay');
-  if(overlay){
-    overlay.style.display = 'none';
-    overlay.setAttribute('aria-hidden', 'true');
-    document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
-    setMessage('Has entrado como invitado. Sólo podrás ver el contenido.', false);
-    return;
-  }
-
-  window.location.href = '/#invitado';
+  closeLoginOverlay();
+  document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
 }
 
 form.addEventListener('submit', async (ev) => {
@@ -85,6 +85,7 @@ form.addEventListener('submit', async (ev) => {
     // Guardar token (ejemplo). En producción preferir HttpOnly cookie desde backend.
     localStorage.setItem('futgo_token', token);
     localStorage.setItem('futgo_user', JSON.stringify(user));
+    closeLoginOverlay();
     document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
 
     if(user.mustChangePassword){
@@ -110,12 +111,8 @@ document.getElementById('forgot').addEventListener('click', ()=>{
   alert('Solicita restablecimiento de contraseña al administrador.');
 });
 
-if(guestBtn){
-  guestBtn.addEventListener('click', enterAsGuest);
-}
-
 if(closeBtn){
-  closeBtn.addEventListener('click', enterAsGuest);
+  closeBtn.addEventListener('click', closeLoginOverlay);
 }
 
 // Toggle password visibility
