@@ -748,10 +748,10 @@ function settledValue(result, fallback) {
 
 function shouldKeepLocalMatch(localMatch, remoteMatch, preferLocal) {
   if (!localMatch) return false;
-  if (preferLocal) return true;
   const localUpdatedAt = Number(localMatch.updatedAt) || 0;
   const remoteUpdatedAt = Number(remoteMatch.updatedAt) || 0;
-  return Boolean(localUpdatedAt && remoteUpdatedAt && localUpdatedAt > remoteUpdatedAt);
+  if (localUpdatedAt && remoteUpdatedAt) return localUpdatedAt > remoteUpdatedAt;
+  return Boolean(preferLocal && localUpdatedAt && !remoteUpdatedAt);
 }
 
 async function pushRemoteState(throwOnError = false) {
