@@ -3,6 +3,7 @@ const emailEl = document.getElementById('email');
 const passwordEl = document.getElementById('password');
 const submitBtn = document.getElementById('submit');
 const messageEl = document.getElementById('message');
+const guestBtn = document.getElementById('guest-login');
 
 // API base: use local auth server in development, relative path in production
 const API_BASE = (['127.0.0.1', 'localhost'].includes(window.location.hostname)) ? 'http://127.0.0.1:4000' : '';
@@ -62,6 +63,7 @@ form.addEventListener('submit', async (ev) => {
     // Guardar token (ejemplo). En producción preferir HttpOnly cookie desde backend.
     localStorage.setItem('futgo_token', token);
     localStorage.setItem('futgo_user', JSON.stringify(user));
+    document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
 
     if(user.mustChangePassword){
       window.location.href = '/change-password';
@@ -85,6 +87,28 @@ form.addEventListener('submit', async (ev) => {
 document.getElementById('forgot').addEventListener('click', ()=>{
   alert('Solicita restablecimiento de contraseña al administrador.');
 });
+
+if(guestBtn){
+  guestBtn.addEventListener('click', () => {
+    localStorage.removeItem('futgo_token');
+    localStorage.setItem('futgo_user', JSON.stringify({
+      id: 'guest',
+      name: 'Invitado',
+      email: '',
+      role: 'invitado'
+    }));
+    document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
+    const overlay = document.getElementById('login-overlay');
+    if(overlay){
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden', 'true');
+    } else {
+      window.location.href = '/#invitado';
+      return;
+    }
+    setMessage('Has entrado como invitado. Sólo podrás ver el contenido.', false);
+  });
+}
 
 // Toggle password visibility
 const togglePasswordBtn = document.getElementById('toggle-password');

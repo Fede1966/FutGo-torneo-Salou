@@ -9,7 +9,7 @@
   </head>
   <body>
     <!-- Login overlay (bloquea la app hasta autenticación) -->
-    <div id="login-overlay" class="login-shell" aria-hidden="false">
+    <div id="login-overlay" class="login-shell login-overlay" aria-hidden="false">
       <div class="card">
         <h1 id="login-title">Acceso a FutGo — Área técnica</h1>
         <form id="login-form" novalidate>
@@ -23,6 +23,7 @@
           <div class="hint">Si no tienes cuenta, contacta con el administrador.</div>
 
           <button id="submit" class="primary" type="submit">Iniciar sesión</button>
+          <button id="guest-login" class="guest-button" type="button">Entrar como invitado</button>
 
           <div id="message" role="status" aria-live="polite"></div>
         </form>
@@ -234,7 +235,7 @@
       </form>
     </dialog>
 
-    <script src="app.js?v=20260628-2"></script>
+    <script src="app.js?v=20260628-3"></script>
     <script src="login.js"></script>
     <script>
       (function(){
@@ -252,14 +253,22 @@
 
         function update(){
           const token = localStorage.getItem('futgo_token');
-          if (isTokenValid(token)) {
+          let user = null;
+          try {
+            user = JSON.parse(localStorage.getItem('futgo_user') || 'null');
+          } catch {
+            user = null;
+          }
+          if (isTokenValid(token) || user?.role === 'invitado') {
             overlay.style.display = 'none';
             overlay.setAttribute('aria-hidden','true');
+            document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
           } else {
             localStorage.removeItem('futgo_token');
             localStorage.removeItem('futgo_user');
             overlay.style.display = 'flex';
             overlay.setAttribute('aria-hidden','false');
+            document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
           }
         }
         window.addEventListener('storage', update);

@@ -117,6 +117,31 @@ let supportsRemotePlayerProfiles = false;
 let returnToPlayerReportsAfterMatchSave = false;
 let isTeamNavDropdownOpen = false;
 
+const READ_ONLY_ACTION_SELECTOR = [
+  "#context-action-button",
+  "#edit-team-button",
+  "#add-team-button",
+  "#add-staff-button",
+  "#delete-staff-button",
+  "#delete-player-modal-button",
+  "#delete-team-button",
+  "[data-edit-player]",
+  "[data-edit-staff]",
+  "[data-edit-match]",
+  "[data-delete-match]",
+  "[data-remove-video]",
+  "[data-add-video]",
+  "[data-video-file]",
+  "#create-match-from-player-report",
+  "#save-player-report",
+  "[data-player-report-save]",
+  "[data-save-player-report]",
+  "[data-delete-player-report]",
+  "[data-add-lineup-row]",
+  "[data-remove-lineup-row]",
+  "[data-remove-lineup]"
+].join(",");
+
 const views = {
   squad: document.querySelector("#squad-view"),
   matches: document.querySelector("#matches-view"),
@@ -142,6 +167,24 @@ const playerPhotoInput = document.querySelector("#player-photo");
 const playerPhotoFileInput = document.querySelector("#player-photo-file");
 const playerPhotoPreview = document.querySelector("#player-photo-preview");
 const deletePlayerModalButton = document.querySelector("#delete-player-modal-button");
+
+function currentUser() {
+  try {
+    return JSON.parse(localStorage.getItem("futgo_user") || "null");
+  } catch {
+    return null;
+  }
+}
+
+function isReadOnlyMode() {
+  return currentUser()?.role === "invitado";
+}
+
+function ensureCanEdit() {
+  if (!isReadOnlyMode()) return true;
+  alert("Has entrado como invitado. Puedes ver el contenido, pero no editarlo.");
+  return false;
+}
 
 const staffDialog = document.createElement("dialog");
 staffDialog.id = "staff-dialog";
@@ -225,6 +268,7 @@ staffPhotoFileInput.addEventListener("change", async () => {
 staffForm.addEventListener("submit", async (event) => {
   if (event.submitter?.value === "cancel") return;
   event.preventDefault();
+  if (!ensureCanEdit()) return;
   const id = staffDialog.querySelector("#staff-id").value || crypto.randomUUID();
   const existing = state.staff.find((staffItem) => staffItem.id === id);
   const photoFile = staffPhotoFileInput.files[0];
@@ -250,6 +294,7 @@ staffForm.addEventListener("submit", async (event) => {
 });
 
 deleteStaffButton.addEventListener("click", () => {
+  if (!ensureCanEdit()) return;
   const id = staffDialog.querySelector("#staff-id").value;
   const item = state.staff.find((staffItem) => staffItem.id === id);
   if (!item || !confirm(`¿Eliminar a ${item.name} del staff?`)) return;
@@ -263,6 +308,7 @@ deleteStaffButton.addEventListener("click", () => {
 staffProfileDialog.querySelector("#close-staff-profile").addEventListener("click", () => staffProfileDialog.close());
 staffProfileDialog.querySelector("#close-staff-profile-action").addEventListener("click", () => staffProfileDialog.close());
 staffProfileDialog.querySelector("#edit-staff-profile").addEventListener("click", () => {
+  if (!ensureCanEdit()) return;
   const id = staffProfileDialog.dataset.staffId;
   staffProfileDialog.close();
   openStaffDialog(id);
@@ -292,9 +338,14 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeTeamNavDropdown();
 });
 
+document.addEventListener("futgo:auth-changed", () => {
+  render();
+});
+
 teamForm.addEventListener("submit", (event) => {
   if (event.submitter?.value === "cancel") return;
   event.preventDefault();
+  if (!ensureCanEdit()) return;
   const teamId = document.querySelector("#team-id").value;
   const name = document.querySelector("#team-name").value.trim();
   if (!name) return;
@@ -313,11 +364,13 @@ teamForm.addEventListener("submit", (event) => {
 });
 
 deleteTeamButton.addEventListener("click", () => {
+  if (!ensureCanEdit()) return;
   const teamId = document.querySelector("#team-id").value;
   if (teamId) deleteTeam(teamId);
 });
 
 contextActionButton.addEventListener("click", () => {
+  if (!ensureCanEdit()) return;
   if (state.activeView === "matches") openMatchDialog();
   else openPlayerDialog();
 });
@@ -338,6 +391,7 @@ deletePlayerModalButton.addEventListener("click", () => {
 playerForm.addEventListener("submit", async (event) => {
   if (event.submitter?.value === "cancel") return;
   event.preventDefault();
+  if (!ensureCanEdit()) return;
   const photoFile = playerPhotoFileInput.files[0];
   const playerId = document.querySelector("#player-id").value || crypto.randomUUID();
   const currentPlayer = state.players.find((item) => item.id === playerId);
@@ -369,6 +423,7 @@ playerForm.addEventListener("submit", async (event) => {
 matchForm.addEventListener("submit", (event) => {
   if (event.submitter?.value === "cancel") return;
   event.preventDefault();
+  if (!ensureCanEdit()) return;
   const id = document.querySelector("#match-id").value || crypto.randomUUID();
   const existing = state.matches.find((item) => item.id === id);
   const formMatch = {
@@ -609,7 +664,7 @@ function loadState() {
 }
 
 function saveState() {
-  state.lastModifiedAt = Date.now();
+  if (!isReadOnlyMode()) state.lastModifiedAt = Date.now();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   queueRemoteSave();
 }
@@ -647,7 +702,7 @@ function hasSupabaseConfig() {
 }
 
 function queueRemoteSave() {
-  if (!hasSupabaseConfig() || isPullingRemote) return;
+  if (!hasSupabaseConfig() || isPullingRemote || isReadOnlyMode()) return;
   clearTimeout(remoteSaveTimer);
   remoteSaveTimer = setTimeout(() => {
     pushRemoteState();
@@ -755,7 +810,7 @@ function shouldKeepLocalMatch(localMatch, remoteMatch, preferLocal) {
 }
 
 async function pushRemoteState(throwOnError = false) {
-  if (!hasSupabaseConfig()) return;
+  if (!hasSupabaseConfig() || isReadOnlyMode()) return;
   try {
     state.matches = state.matches.filter((item) => !REMOVED_MATCH_IDS.has(item.id));
     await supabaseUpsert("players", state.players.map(toRemotePlayer), "id");
@@ -796,7 +851,7 @@ async function supabaseUpsert(table, rows, conflictColumn) {
 }
 
 async function supabaseDelete(table, column, value) {
-  if (!hasSupabaseConfig()) return;
+  if (!hasSupabaseConfig() || isReadOnlyMode()) return;
   try {
     await supabaseRequest(`${table}?${column}=eq.${encodeURIComponent(value)}`, {
       method: "DELETE",
@@ -1190,6 +1245,7 @@ function uniqueTeamId(name) {
 }
 
 function openStaffDialog(id = "") {
+  if (!ensureCanEdit()) return;
   const item = state.staff.find((staffItem) => staffItem.id === id);
   staffDialog.querySelector("#staff-modal-title").textContent = item
     ? "Editar miembro del staff"
@@ -1219,6 +1275,7 @@ function openStaffProfile(id) {
 }
 
 function openTeamDialog(teamId = "") {
+  if (!ensureCanEdit()) return;
   const item = state.teams.find((team) => team.id === teamId);
   document.querySelector("#team-modal-title").textContent = item ? "Editar equipo" : "Nuevo equipo";
   document.querySelector("#team-id").value = item?.id || "";
@@ -1248,6 +1305,7 @@ function renameTeam(teamId, name) {
 }
 
 async function deleteTeam(teamId) {
+  if (!ensureCanEdit()) return;
   const item = state.teams.find((team) => team.id === teamId);
   if (!item) return;
   if (state.teams.length === 1) {
@@ -1314,6 +1372,7 @@ function render() {
   renderStatistics();
   renderPlayerDetail();
   renderMatchDetail();
+  applyAccessMode();
 }
 
 function normalizedMainView() {
@@ -1340,6 +1399,23 @@ function changeActiveTeam(teamId) {
   state.selectedMatchId = activeMatches()[0]?.id || "";
   saveState();
   render();
+}
+
+function applyAccessMode() {
+  const readOnly = isReadOnlyMode();
+  document.body.classList.toggle("guest-mode", readOnly);
+  contextActionButton.hidden = readOnly;
+  document.querySelectorAll(READ_ONLY_ACTION_SELECTOR).forEach((element) => {
+    element.hidden = readOnly;
+    if ("disabled" in element) element.disabled = readOnly;
+  });
+  document.querySelectorAll(".main-content input, .main-content textarea").forEach((control) => {
+    control.disabled = readOnly;
+  });
+  document.querySelectorAll(".main-content select").forEach((control) => {
+    if (control.id === "matches-team-selector") return;
+    control.disabled = readOnly;
+  });
 }
 
 function closeTeamNavDropdown() {
@@ -2703,6 +2779,7 @@ function addVideoFile(item, type, file) {
 }
 
 function openPlayerDialog(id) {
+  if (!ensureCanEdit()) return;
   const item = state.players.find((playerItem) => playerItem.id === id);
   document.querySelector("#player-modal-title").textContent = item ? "Editar jugador" : "Nuevo jugador";
   deletePlayerModalButton.style.display = item ? "inline-flex" : "none";
@@ -2719,6 +2796,7 @@ function openPlayerDialog(id) {
 }
 
 function openMatchDialog(id, returnToPlayerReports = false) {
+  if (!ensureCanEdit()) return;
   returnToPlayerReportsAfterMatchSave = returnToPlayerReports;
   const item = state.matches.find((matchItem) => matchItem.id === id);
   document.querySelector("#match-modal-title").textContent = item ? "Editar partido" : "Nuevo partido";
@@ -2741,6 +2819,7 @@ function openMatchDialog(id, returnToPlayerReports = false) {
 }
 
 function deletePlayer(id) {
+  if (!ensureCanEdit()) return;
   const item = state.players.find((playerItem) => playerItem.id === id);
   if (!item || !confirm(`¿Eliminar a ${item.name}?`)) return;
   state.players = state.players.filter((playerItem) => playerItem.id !== id);
@@ -2757,6 +2836,7 @@ function deletePlayer(id) {
 }
 
 function deleteMatch(id) {
+  if (!ensureCanEdit()) return;
   const item = state.matches.find((matchItem) => matchItem.id === id);
   if (!item || !confirm(`¿Eliminar la jornada ${item.round}?`)) return;
   state.matches = state.matches.filter((matchItem) => matchItem.id !== id);

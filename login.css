@@ -2,14 +2,16 @@
 *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,-apple-system,Arial}
 html,body{height:100%;margin:0;background:var(--bg)}
 .login-shell{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
-.login-shell.login-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.35)}
-.login-shell.login-overlay .card{max-width:420px;margin:0}
+.login-shell.login-overlay{position:fixed;inset:0;z-index:9999;background:rgba(17,24,39,0.36);backdrop-filter:blur(3px)}
+.login-shell.login-overlay .card{max-width:520px;margin:0}
 .card{width:100%;max-width:420px;background:var(--card);padding:28px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.08)}
 h1{font-size:20px;margin:0 0 18px}
 label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
-input[type="email"],input[type="password"]{width:100%;padding:10px 12px;margin-top:6px;border:1px solid #e6e9ef;border-radius:8px;font-size:15px}
+input[type="email"],input[type="password"],input[type="text"]{width:100%;padding:10px 12px;margin-top:6px;border:1px solid #e6e9ef;border-radius:8px;font-size:15px}
 .hint{margin-top:12px;color:var(--muted);font-size:13px}
 .primary{display:inline-block;margin-top:16px;background:var(--primary);color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer}
+.guest-button{display:inline-block;margin:16px 0 0 10px;background:#fff;color:#111827;border:1px solid #d9dee8;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer}
+.guest-button:hover{background:#f4f6f8}
 .links{margin-top:12px;text-align:right}
 .link-button{background:none;border:none;color:var(--primary);cursor:pointer;font-size:13px}
 #toggle-password{display:inline-block;margin-top:8px;padding:6px 8px;border-radius:6px;background:#eef4ff;border:1px solid #dbeafe;color:var(--primary);font-size:13px}
