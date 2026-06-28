@@ -237,10 +237,26 @@
     </dialog>
 
     <script src="app.js?v=20260628-3"></script>
-    <script src="login.js?v=20260628-1"></script>
+    <script src="login.js?v=20260628-2"></script>
     <script>
       (function(){
         const overlay = document.getElementById('login-overlay');
+
+        function enterAsGuestFallback(){
+          localStorage.removeItem('futgo_token');
+          localStorage.setItem('futgo_user', JSON.stringify({
+            id: 'guest',
+            name: 'Invitado',
+            email: '',
+            role: 'invitado'
+          }));
+          overlay.style.display = 'none';
+          overlay.setAttribute('aria-hidden','true');
+          document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
+        }
+
+        document.getElementById('guest-login')?.addEventListener('click', enterAsGuestFallback);
+        document.getElementById('login-close')?.addEventListener('click', enterAsGuestFallback);
 
         function isTokenValid(token) {
           if (!token) return false;

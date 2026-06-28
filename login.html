@@ -33,6 +33,23 @@
       </div>
     </main>
 
-    <script src="login.js?v=20260628-1"></script>
+    <script src="login.js?v=20260628-2"></script>
+    <script>
+      (function(){
+        function enterAsGuestFallback(){
+          localStorage.removeItem('futgo_token');
+          localStorage.setItem('futgo_user', JSON.stringify({
+            id: 'guest',
+            name: 'Invitado',
+            email: '',
+            role: 'invitado'
+          }));
+          window.location.href = '/#invitado';
+        }
+
+        document.getElementById('guest-login')?.addEventListener('click', enterAsGuestFallback);
+        document.getElementById('login-close')?.addEventListener('click', enterAsGuestFallback);
+      })();
+    </script>
   </body>
 </html>
