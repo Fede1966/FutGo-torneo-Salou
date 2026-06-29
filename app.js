@@ -178,7 +178,8 @@ function currentUser() {
 
 function isReadOnlyMode() {
   const user = currentUser();
-  return !user || user.role === "invitado";
+  const role = String(user?.role || "").trim().toLowerCase();
+  return !["administrador", "admin", "responsable", "tecnico", "técnico"].includes(role);
 }
 
 function ensureCanEdit() {
