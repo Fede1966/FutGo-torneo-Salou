@@ -343,6 +343,7 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("futgo:auth-changed", () => {
   render();
+  if (!isReadOnlyMode() && state.staff.length) queueRemoteSave();
 });
 
 teamForm.addEventListener("submit", (event) => {
@@ -816,6 +817,16 @@ async function pushRemoteState(throwOnError = false) {
   if (!hasSupabaseConfig() || isReadOnlyMode()) return;
   try {
     state.matches = state.matches.filter((item) => !REMOVED_MATCH_IDS.has(item.id));
+    if (!state.staff.length) {
+      const remoteRows = await supabaseRequest("lineups?match_id=eq.__app_state__&select=lineup");
+      const remoteStaff = normalizeStaffList(parseRemoteAppState(remoteRows?.[0]?.lineup)?.staff);
+      const backupStaff = backupStaffList();
+      const recoveredStaff = remoteStaff.length ? remoteStaff : backupStaff;
+      if (recoveredStaff.length) {
+        state.staff = recoveredStaff;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+    }
     await supabaseUpsert("players", state.players.map(toRemotePlayer), "id");
     await supabaseUpsert("matches", [...state.matches.map(toRemoteMatch), toRemoteAppStateMatch()], "id");
     await supabaseUpsert("lineups", [...state.matches.map(toRemoteLineup), toRemoteAppStateLineup()], "match_id");
@@ -1016,6 +1027,44 @@ function parseRemoteAppState(value) {
   return appState && typeof appState === "object" ? appState : null;
 }
 
+function normalizeStaffList(value) {
+  return Array.isArray(value)
+    ? value
+        .filter((item) => item?.id && item?.name)
+        .map((item) => ({
+          id: String(item.id),
+          teamId: migrateTeamId(item.teamId),
+          name: String(item.name),
+          role: String(item.role || ""),
+          photo: String(item.photo || ""),
+          photoPath: String(item.photoPath || item.photo_path || "")
+        }))
+    : [];
+}
+
+function mergeStaffLists(localStaff, remoteStaff, preferLocal) {
+  const local = normalizeStaffList(localStaff);
+  const remote = normalizeStaffList(remoteStaff);
+  if (!remote.length && local.length) return local;
+  if (!local.length) return remote;
+  return [
+    ...(preferLocal ? remote : local),
+    ...(preferLocal ? local : remote)
+  ].reduce((items, item) => {
+    items.set(item.id, item);
+    return items;
+  }, new Map()).values();
+}
+
+function backupStaffList() {
+  try {
+    const backup = JSON.parse(localStorage.getItem(STORAGE_BACKUP_KEY) || "null");
+    return normalizeStaffList(backup?.state?.staff);
+  } catch {
+    return [];
+  }
+}
+
 function applyRemoteAppState(remoteAppState, preferLocal) {
   if (Array.isArray(remoteAppState.teams) && remoteAppState.teams.length) {
     const remoteTeams = remoteAppState.teams
@@ -1038,17 +1087,10 @@ function applyRemoteAppState(remoteAppState, preferLocal) {
   if (!preferLocal && state.teams.some((item) => item.id === remoteAppState.activeTeamId)) {
     state.activeTeamId = remoteAppState.activeTeamId;
   }
-  if (!preferLocal && Array.isArray(remoteAppState.staff)) {
-    state.staff = remoteAppState.staff
-      .filter((item) => item?.id && item?.name)
-      .map((item) => ({
-        id: String(item.id),
-        teamId: migrateTeamId(item.teamId),
-        name: String(item.name),
-        role: String(item.role || ""),
-        photo: String(item.photo || ""),
-        photoPath: String(item.photoPath || item.photo_path || "")
-      }));
+  if (Array.isArray(remoteAppState.staff)) {
+    const remoteStaff = normalizeStaffList(remoteAppState.staff);
+    const backupStaff = !remoteStaff.length && !state.staff.length ? backupStaffList() : [];
+    state.staff = [...mergeStaffLists(state.staff, remoteStaff.length ? remoteStaff : backupStaff, preferLocal)];
   }
   const profiles = remoteAppState.playerProfiles || {};
   state.players = state.players.map((item) => {
