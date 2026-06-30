@@ -1507,7 +1507,11 @@ function renderHome() {
         <img class="home-hero-logo" src="assets/futgo-logo.png?v=20260620-1" alt="Logo FutGo" />
         <div class="home-hero-copy">
           <p>FutGo Talent Menorca</p>
-          <h2>FutGo Talent Menorca en<br />Torneo Esei Salou</h2>
+          <h2>FutGo Talent Menorca en</h2>
+          <div class="home-tournament-title">
+            <span>Torneo Esei Salou</span>
+            <img src="assets/esei-events-logo.svg?v=20260630-1" alt="Logo Esei Events" />
+          </div>
         </div>
       </div>
     </section>

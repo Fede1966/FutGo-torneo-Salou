@@ -338,6 +338,30 @@ button {
   letter-spacing: 0;
 }
 
+.home-tournament-title {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2vw, 24px);
+  margin-top: 8px;
+}
+
+.home-tournament-title span {
+  color: #fff;
+  font-size: clamp(2.35rem, 5.2vw, 5.8rem);
+  font-weight: 800;
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+.home-tournament-title img {
+  width: clamp(76px, 10vw, 132px);
+  height: clamp(76px, 10vw, 132px);
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: contain;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+}
+
 .summary-grid,
 .squad-grid,
 .match-grid,
@@ -2248,6 +2272,11 @@ button:focus-visible {
 
   .home-hero-logo {
     border-radius: 18px;
+  }
+
+  .home-tournament-title {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .toolbar,
