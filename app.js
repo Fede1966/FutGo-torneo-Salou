@@ -2371,7 +2371,7 @@ function renderRankingCard(ranking, playerRows) {
             ? `<div class="ranking-leader">
                 <div class="ranking-player-photo" ${photoStyle}>${leader.photo ? "" : initials(leader.name)}</div>
                 <div>
-                  <strong>${escapeHtml(firstName(leader.name))}</strong>
+                  <strong>${escapeHtml(firstTwoNames(leader.name))}</strong>
                   <span>${leader[ranking.key]}${ranking.suffix}</span>
                 </div>
               </div>`
@@ -2383,7 +2383,7 @@ function renderRankingCard(ranking, playerRows) {
           .map(
             (playerItem) => `
               <li>
-                <span>${escapeHtml(firstName(playerItem.name))}</span>
+                <span>${escapeHtml(firstTwoNames(playerItem.name))}</span>
                 <strong>${playerItem[ranking.key]}${ranking.suffix}</strong>
               </li>
             `
@@ -3556,8 +3556,8 @@ function shortName(name) {
   return parts.length > 1 ? parts[parts.length - 1] : name;
 }
 
-function firstName(name) {
-  return name.trim().split(/\s+/)[0] || name;
+function firstTwoNames(name) {
+  return name.trim().split(/\s+/).slice(0, 2).join(" ") || name;
 }
 
 function formatDate(value) {
