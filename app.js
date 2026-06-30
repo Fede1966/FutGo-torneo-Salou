@@ -65,6 +65,16 @@ const REMOVED_MATCH_IDS = new Set([
   "1af5afdd-3d02-4f0c-9047-a73da4781e1a",
   "da23bd14-1617-4b02-ac10-5f71fc6580bd"
 ]);
+const REMOVED_MATCH_SIGNATURES = [
+  {
+    teamId: "cadete-femenino",
+    round: 4,
+    home: "Cadete femenino",
+    away: "CD Mas River C",
+    time: "15:35",
+    score: ""
+  }
+];
 const FINAL_STANDINGS = [];
 const PLAN_SECTIONS = [
   ["offensive", "Acciones ofensivas"],
@@ -653,7 +663,7 @@ function loadState() {
       matches: shouldResetMatches
         ? []
         : saved.matches
-          ?.filter((item) => !REMOVED_MATCH_IDS.has(item.id))
+          ?.filter((item) => !isRemovedMatch(item))
           .map((item) => ({
             ...item,
             updatedAt: Number(item.updatedAt) || 0,
@@ -753,7 +763,7 @@ async function pullRemoteState() {
     const visibleMatches = shouldIgnoreRemoteMatches
       ? []
       : matches.filter(
-          (item) => item.id !== APP_STATE_MATCH_ID && !REMOVED_MATCH_IDS.has(item.id)
+          (item) => item.id !== APP_STATE_MATCH_ID && !isRemovedMatch(item)
         );
     const visibleLineups = lineups.filter((item) => item.match_id !== APP_STATE_MATCH_ID);
     const lineupByMatch = Object.fromEntries(
@@ -784,7 +794,7 @@ async function pullRemoteState() {
           return shouldKeepLocalMatch(localMatch, remoteMatch, preferLocal) ? localMatch : remoteMatch;
         }),
         ...state.matches.filter(
-          (item) => !remoteMatchIds.has(item.id) && !REMOVED_MATCH_IDS.has(item.id)
+          (item) => !remoteMatchIds.has(item.id) && !isRemovedMatch(item)
         )
       ];
     } else if (!state.matches.length) {
@@ -822,7 +832,7 @@ function shouldKeepLocalMatch(localMatch, remoteMatch, preferLocal) {
 async function pushRemoteState(throwOnError = false) {
   if (!hasSupabaseConfig() || isReadOnlyMode()) return;
   try {
-    state.matches = uniqueMatches(state.matches.filter((item) => !REMOVED_MATCH_IDS.has(item.id)));
+    state.matches = uniqueMatches(state.matches.filter((item) => !isRemovedMatch(item)));
     if (!state.staff.length) {
       const remoteRows = await supabaseRequest("lineups?match_id=eq.__app_state__&select=lineup");
       const remoteStaff = normalizeStaffList(parseRemoteAppState(remoteRows?.[0]?.lineup)?.staff);
@@ -1278,7 +1288,26 @@ function activeStaff() {
 }
 
 function activeMatches() {
-  return uniqueMatches(state.matches.filter((item) => (item.teamId || DEFAULT_TEAM_ID) === state.activeTeamId));
+  return uniqueMatches(
+    state.matches.filter((item) => (item.teamId || DEFAULT_TEAM_ID) === state.activeTeamId && !isRemovedMatch(item))
+  );
+}
+
+function isRemovedMatch(item) {
+  if (!item) return false;
+  if (REMOVED_MATCH_IDS.has(item.id)) return true;
+  return REMOVED_MATCH_SIGNATURES.some((signature) => matchesRemovedSignature(item, signature));
+}
+
+function matchesRemovedSignature(item, signature) {
+  return (
+    (item.teamId || DEFAULT_TEAM_ID) === signature.teamId &&
+    Number(item.round) === Number(signature.round) &&
+    normalizeMatchIdentityText(item.home) === normalizeMatchIdentityText(signature.home) &&
+    normalizeMatchIdentityText(item.away) === normalizeMatchIdentityText(signature.away) &&
+    String(item.time || "") === signature.time &&
+    normalizeMatchIdentityText(item.score) === normalizeMatchIdentityText(signature.score)
+  );
 }
 
 function uniqueMatches(matches) {
@@ -1307,6 +1336,8 @@ function normalizeMatchIdentityText(value) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
     .replace(/\s+/g, " ");
 }
 
