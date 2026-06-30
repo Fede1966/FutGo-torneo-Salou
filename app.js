@@ -822,7 +822,7 @@ function shouldKeepLocalMatch(localMatch, remoteMatch, preferLocal) {
 async function pushRemoteState(throwOnError = false) {
   if (!hasSupabaseConfig() || isReadOnlyMode()) return;
   try {
-    state.matches = state.matches.filter((item) => !REMOVED_MATCH_IDS.has(item.id));
+    state.matches = uniqueMatches(state.matches.filter((item) => !REMOVED_MATCH_IDS.has(item.id)));
     if (!state.staff.length) {
       const remoteRows = await supabaseRequest("lineups?match_id=eq.__app_state__&select=lineup");
       const remoteStaff = normalizeStaffList(parseRemoteAppState(remoteRows?.[0]?.lineup)?.staff);
@@ -1278,7 +1278,36 @@ function activeStaff() {
 }
 
 function activeMatches() {
-  return state.matches.filter((item) => (item.teamId || DEFAULT_TEAM_ID) === state.activeTeamId);
+  return uniqueMatches(state.matches.filter((item) => (item.teamId || DEFAULT_TEAM_ID) === state.activeTeamId));
+}
+
+function uniqueMatches(matches) {
+  const known = new Set();
+  return matches.filter((item) => {
+    const key = matchIdentityKey(item);
+    if (known.has(key)) return false;
+    known.add(key);
+    return true;
+  });
+}
+
+function matchIdentityKey(item) {
+  return [
+    item.teamId || DEFAULT_TEAM_ID,
+    normalizeMatchIdentityText(item.home),
+    normalizeMatchIdentityText(item.away),
+    item.date || "",
+    normalizeMatchIdentityText(item.score)
+  ].join("|");
+}
+
+function normalizeMatchIdentityText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
 }
 
 function uniqueTeamId(name) {
