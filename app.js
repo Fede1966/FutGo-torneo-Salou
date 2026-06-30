@@ -9,6 +9,7 @@ const DEFAULT_TEAM_ID = "alevin-masculino";
 const DEFAULT_TEAMS_VERSION = 3;
 const PLAYERS_RESET_VERSION = 2;
 const MATCHES_RESET_VERSION = 2;
+const HOME_VIEW_VERSION = 1;
 const DEFAULT_VISIBLE_TEAM = {
   id: "alevin-masculino",
   name: "Alevín masculino"
@@ -97,6 +98,7 @@ const initialState = {
   defaultTeamsVersion: DEFAULT_TEAMS_VERSION,
   playersResetVersion: PLAYERS_RESET_VERSION,
   matchesResetVersion: MATCHES_RESET_VERSION,
+  homeViewVersion: HOME_VIEW_VERSION,
   teams: structuredClone(DEFAULT_VISIBLE_TEAMS),
   activeTeamId: DEFAULT_VISIBLE_TEAM.id,
   players: [],
@@ -104,7 +106,7 @@ const initialState = {
   matches: [],
   selectedMatchId: "",
   selectedPlayerId: "",
-  activeView: "squad",
+  activeView: "home",
   activeDetailTab: "plan",
   activePlayerTab: "statistics"
 };
@@ -143,6 +145,7 @@ const READ_ONLY_ACTION_SELECTOR = [
 ].join(",");
 
 const views = {
+  home: document.querySelector("#home-view"),
   squad: document.querySelector("#squad-view"),
   matches: document.querySelector("#matches-view"),
   standings: document.querySelector("#standings-view"),
@@ -606,7 +609,8 @@ function loadState() {
       (Number(saved.playersResetVersion) || 0) < PLAYERS_RESET_VERSION;
     const shouldResetMatches =
       (Number(saved.matchesResetVersion) || 0) < MATCHES_RESET_VERSION;
-    const activeView = ["lineups", "gameplan"].includes(saved.activeView) ? "matches" : saved.activeView;
+    const savedActiveView = ["lineups", "gameplan"].includes(saved.activeView) ? "matches" : saved.activeView;
+    const activeView = (Number(saved.homeViewVersion) || 0) < HOME_VIEW_VERSION ? "home" : savedActiveView;
     const teams = mergeDefaultVisibleTeams(saved.teams, saved.defaultTeamsVersion);
     const activeTeamId = teams.some((item) => item.id === saved.activeTeamId) ? saved.activeTeamId : teams[0].id;
     return {
@@ -617,6 +621,7 @@ function loadState() {
       defaultTeamsVersion: DEFAULT_TEAMS_VERSION,
       playersResetVersion: PLAYERS_RESET_VERSION,
       matchesResetVersion: MATCHES_RESET_VERSION,
+      homeViewVersion: HOME_VIEW_VERSION,
       activeView,
       teams,
       activeTeamId,
@@ -1407,10 +1412,11 @@ function render() {
   else views[state.activeView].classList.add("active");
 
   contextActionButton.textContent = state.activeView === "matches" ? "Añadir partido" : "Añadir jugador";
-  contextActionButton.style.display = ["detail", "playerDetail", "standings", "statistics"].includes(state.activeView) ? "none" : "inline-flex";
+  contextActionButton.style.display = ["home", "detail", "playerDetail", "standings", "statistics"].includes(state.activeView) ? "none" : "inline-flex";
   pageTitle.textContent = pageTitleForView(state.activeView);
   renderTeamNavDropdown();
 
+  renderHome();
   renderSquad();
   renderMatches();
   renderStandings();
@@ -1428,6 +1434,7 @@ function normalizedMainView() {
 
 function pageTitleForView(view) {
   const titles = {
+    home: "Inicio",
     squad: "Equipos",
     matches: "Partidos",
     standings: "Clasificación",
@@ -1435,7 +1442,7 @@ function pageTitleForView(view) {
     playerDetail: "Ficha del jugador",
     detail: "Detalle de partido"
   };
-  return titles[view] || "Equipos";
+  return titles[view] || "Inicio";
 }
 
 function changeActiveTeam(teamId) {
@@ -1491,6 +1498,20 @@ function renderTeamNavDropdown() {
       changeActiveTeam(button.dataset.navTeam);
     });
   });
+}
+
+function renderHome() {
+  views.home.innerHTML = `
+    <section class="home-hero" aria-label="FutGo Talent Menorca en Torneo Esei Salou">
+      <div class="home-hero-content">
+        <img class="home-hero-logo" src="assets/futgo-logo.png?v=20260620-1" alt="Logo FutGo" />
+        <div class="home-hero-copy">
+          <p>FutGo Talent Menorca</p>
+          <h2>FutGo Talent Menorca en<br />Torneo Esei Salou</h2>
+        </div>
+      </div>
+    </section>
+  `;
 }
 
 function renderSquad() {
