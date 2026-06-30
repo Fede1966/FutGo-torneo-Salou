@@ -155,6 +155,7 @@ const views = {
 };
 
 const pageTitle = document.querySelector("#page-title");
+const pageEyebrow = document.querySelector("#page-eyebrow");
 const contextActionButton = document.querySelector("#context-action-button");
 const navTeamDropdown = document.querySelector("#nav-team-dropdown");
 const navTeamButton = document.querySelector("#nav-team-button");
@@ -1413,6 +1414,7 @@ function render() {
 
   contextActionButton.textContent = state.activeView === "matches" ? "Añadir partido" : "Añadir jugador";
   contextActionButton.style.display = ["home", "detail", "playerDetail", "standings", "statistics"].includes(state.activeView) ? "none" : "inline-flex";
+  pageEyebrow.textContent = state.activeView === "home" ? "Temporada 2026 · Del 21 al 24 de junio" : "Temporada 2026";
   pageTitle.textContent = pageTitleForView(state.activeView);
   renderTeamNavDropdown();
 
