@@ -190,10 +190,38 @@ function currentUser() {
   }
 }
 
+function currentTokenPayload() {
+  const token = localStorage.getItem("futgo_token");
+  if (!token) return null;
+  try {
+    const payloadPart = token.split(".")[1];
+    if (!payloadPart) return null;
+    const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function isTokenValidForUser(user) {
+  const payload = currentTokenPayload();
+  if (!payload || typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now()) return false;
+  const tokenRole = String(payload.role || "").trim().toLowerCase();
+  const userRole = String(user?.role || "").trim().toLowerCase();
+  const tokenEmail = String(payload.email || "").trim().toLowerCase();
+  const userEmail = String(user?.email || "").trim().toLowerCase();
+  return tokenRole === userRole && (!tokenEmail || !userEmail || tokenEmail === userEmail);
+}
+
+function hasEditRole(user) {
+  const role = String(user?.role || "").trim().toLowerCase();
+  return ["administrador", "admin", "responsable", "tecnico", "técnico"].includes(role);
+}
+
 function isReadOnlyMode() {
   const user = currentUser();
-  const role = String(user?.role || "").trim().toLowerCase();
-  return !["administrador", "admin", "responsable", "tecnico", "técnico"].includes(role);
+  return !hasEditRole(user) || !isTokenValidForUser(user);
 }
 
 function ensureCanEdit() {
