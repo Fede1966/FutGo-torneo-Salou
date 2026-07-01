@@ -1,5 +1,6 @@
 const STORAGE_KEY = "futgo-torneo-salou-v1";
 const STORAGE_BACKUP_KEY = `${STORAGE_KEY}-backup`;
+const AUTH_SESSION_KEY = "futgo_auth_session";
 const SUPABASE_URL = "https://raclgjcvltlujkiwirzs.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhY2xnamN2bHRsdWpraXdpcnpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NTA5NTcsImV4cCI6MjA5NzUyNjk1N30.HgdigROeINmf3wkKUqn2v5XGuhCAOeMSaN2REnbcV7s";
@@ -205,6 +206,7 @@ function currentTokenPayload() {
 }
 
 function isTokenValidForUser(user) {
+  if (sessionStorage.getItem(AUTH_SESSION_KEY) !== "active") return false;
   const payload = currentTokenPayload();
   if (!payload || typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now()) return false;
   const tokenRole = String(payload.role || "").trim().toLowerCase();

@@ -25,6 +25,7 @@ function closeLoginOverlay(){
 
 function enterAsGuest(){
   localStorage.removeItem('futgo_token');
+  sessionStorage.removeItem('futgo_auth_session');
   localStorage.setItem('futgo_user', JSON.stringify({
     id: 'guest',
     name: 'Invitado',
@@ -85,6 +86,7 @@ form.addEventListener('submit', async (ev) => {
     // Guardar token (ejemplo). En producción preferir HttpOnly cookie desde backend.
     localStorage.setItem('futgo_token', token);
     localStorage.setItem('futgo_user', JSON.stringify(user));
+    sessionStorage.setItem('futgo_auth_session', 'active');
     closeLoginOverlay();
     document.dispatchEvent(new CustomEvent('futgo:auth-changed'));
 
